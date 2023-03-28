@@ -1,5 +1,16 @@
 import { gql } from '@solid-primitives/graphql';
-import { createSignal, For, Setter, Show, Suspense } from 'solid-js';
+import {
+	Component,
+	createEffect,
+	createResource,
+	createSignal,
+	ErrorBoundary,
+	For,
+	Resource,
+	Setter,
+	Show,
+	Suspense,
+} from 'solid-js';
 import Chip from '~/shared/components/Chip';
 import { graphqlClient } from '~/shared/GraphQLClient';
 
@@ -30,88 +41,145 @@ const getUnits = gql`
 	}
 `;
 
-export default function Sidebar() {
-	const [selectedGameId, setSelectedGameId] = createSignal<number>();
-	const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number>();
-	const [selectedUnitIds, setSelectedUnitIds] = createSignal<string[]>();
+type Games = { games: { name: string; id: number }[] };
+type UnitGroups = { unit_groups: { name: string; id: number }[] };
+type Units = { units: { name: string; id: number }[] };
 
-	const [games] = graphqlClient<{ games: { name: string; id: number }[] }>(getGames, {});
+export const Sidebar: Component = () => {
+	const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
+	const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
+	const [selectedUnitIds, setSelectedUnitIds] = createSignal<number[]>([]);
+
+	const [games] = graphqlClient<Games>(getGames, {});
+	const [unitGroups] = graphqlClient<UnitGroups>(getUnitGroups, () =>
+		selectedGameId()
+			? {
+					game_id: selectedGameId(),
+			  }
+			: null,
+	);
+	const [units] = graphqlClient<Units>(getUnits, () =>
+		selectedUnitGroupId()
+			? {
+					unit_group_id: selectedUnitGroupId(),
+			  }
+			: null,
+	);
+
+	const unitGroupsData = () => (selectedGameId() ? unitGroups() : undefined);
+	const unitData = () => (selectedUnitGroupId() ? units() : undefined);
+
+	const clearFilters = () => {
+		setSelectedGameId(undefined);
+		setSelectedUnitGroupId(undefined);
+		setSelectedUnitIds([]);
+	};
 
 	return (
 		<aside class="bg-slate-800 rounded-lg p-4">
-			<div class="mb-4">
-				<label class="font-bold block mb-2" htmlFor="select-game">
-					Games
-				</label>
-				<select
-					class="w-full bg-slate-500 h-10 rounded px-4 focus:outline focus:outline-2 focus:outline-pink-500"
-					onChange={(event) => setSelectedGameId(parseInt(event.currentTarget.value))}
-					name="games"
-					id="select-game"
-				>
-					<option value="">placeholder</option>
-					<For each={games()?.games}>{(game) => <option value={game.id}>{game.name}</option>}</For>
-				</select>
-			</div>
-
-			<Show when={selectedGameId()}>
-				<Suspense fallback={<p>loading...</p>}>
-					<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} selectedGameId={selectedGameId()} />
-				</Suspense>
-			</Show>
-			<Show when={selectedUnitGroupId()}>
-				<Suspense fallback={<p>loading...</p>}>
-					<Units selectedUnitGroupId={selectedUnitGroupId()} />
-				</Suspense>
-			</Show>
+			<h3 class="font-bold text-xl mb-4">Filters</h3>
+			<Suspense fallback={<p>loading...</p>}>
+				<ErrorBoundary fallback={<p>error</p>}>
+					<div class="mb-4">
+						<label class="font-bold block mb-2" htmlFor="select-game">
+							Games
+						</label>
+						<select
+							value={selectedGameId() ?? 'placeholder'}
+							class="select"
+							onChange={(event) => setSelectedGameId(parseInt(event.currentTarget.value))}
+							name="games"
+							id="select-game"
+						>
+							<option value="placeholder">placeholder</option>
+							<For each={games()?.games}>{(game) => <option value={game.id}>{game.name}</option>}</For>
+						</select>
+					</div>
+					<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
+					<Units
+						setSelectedUnitIds={setSelectedUnitIds}
+						units={unitData()}
+						selectedUnitsIds={selectedUnitIds()}
+					/>
+					<div class="mb-4">
+						<button onClick={() => clearFilters()} class="button button-secondary">
+							Clear filters
+						</button>
+					</div>
+				</ErrorBoundary>
+			</Suspense>
 		</aside>
 	);
-}
+};
 
 interface UnitGroupsProps {
-	selectedGameId: number | undefined;
+	unitGroups: UnitGroups | undefined;
 	setSelectedUnitGroupId: Setter<number | undefined>;
 }
 
-function UnitGroups(props: UnitGroupsProps) {
-	const [unitGroups] = graphqlClient<{ unit_groups: { name: string; id: number }[] }>(getUnitGroups, () => ({
-		game_id: props.selectedGameId,
-	}));
+const UnitGroups: Component<UnitGroupsProps> = (props) => {
 	return (
 		<div class="mb-4">
 			<label class="font-bold block mb-2" htmlFor="select-game">
 				Factions
 			</label>
-			<select
-				class="w-full bg-slate-500 h-10 rounded px-4 focus:outline focus:outline-2 focus:outline-pink-500"
-				onChange={(event) => props.setSelectedUnitGroupId(parseInt(event.currentTarget.value))}
-				name="unit-groups"
-				id="unit-groups"
-			>
-				<option value="">placeholder</option>
-				<For each={unitGroups()?.unit_groups}>
-					{(unitGroup) => <option value={unitGroup.id}>{unitGroup.name}</option>}
-				</For>
-			</select>
+			<Show when={!props.unitGroups}>
+				<p class="text-slate-400">First select a game</p>
+			</Show>
+			<Show when={props.unitGroups}>
+				<select
+					class="select"
+					onChange={(event) => props.setSelectedUnitGroupId(parseInt(event.currentTarget.value))}
+					name="unit-groups"
+					id="unit-groups"
+				>
+					<option value="">No filter</option>
+					<For each={props.unitGroups?.unit_groups}>
+						{(unitGroup) => <option value={unitGroup.id}>{unitGroup.name}</option>}
+					</For>
+				</select>
+			</Show>
 		</div>
 	);
-}
+};
 
 interface UnitsProps {
-	selectedUnitGroupId: number | undefined;
-	//setSelectedUnitIds: Setter<string | undefined>;
+	units: Units | undefined;
+	selectedUnitsIds: number[];
+	setSelectedUnitIds: Setter<number[]>;
 }
 
-function Units(props: UnitsProps) {
-	const [units] = graphqlClient<{ units: { name: string; id: number }[] }>(getUnits, () => ({
-		unit_group_id: props.selectedUnitGroupId,
-	}));
+const Units: Component<UnitsProps> = (props) => {
+	const onToggleChip = (id: number) => {
+		if (props.selectedUnitsIds?.find((suId) => suId === id)) {
+			props.setSelectedUnitIds(props.selectedUnitsIds?.filter((suId) => suId !== id));
+		} else {
+			props.setSelectedUnitIds([...props.selectedUnitsIds, id]);
+		}
+	};
+
 	return (
 		<div class="mb-4">
 			<label class="font-bold block mb-2" htmlFor="select-game">
 				Units
 			</label>
-			<For each={units()?.units}>{(unit) => <Chip name={unit.name}></Chip>}</For>
+			<Show when={!props.units}>
+				<p class="text-slate-400">First select a faction</p>
+			</Show>
+			<Show when={props.units}>
+				<For each={props.units?.units}>
+					{(unit) => (
+						<Chip
+							value={unit.id}
+							onChange={(id) => onToggleChip(id)}
+							selected={!!props.selectedUnitsIds?.find((id) => id === unit.id)}
+							name={unit.name}
+						></Chip>
+					)}
+				</For>
+			</Show>
 		</div>
 	);
-}
+};
+
+export default Sidebar;
