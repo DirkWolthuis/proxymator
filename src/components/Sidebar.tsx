@@ -1,18 +1,8 @@
 import { gql } from '@solid-primitives/graphql';
-import {
-	Component,
-	createEffect,
-	createResource,
-	createSignal,
-	ErrorBoundary,
-	For,
-	Resource,
-	Setter,
-	Show,
-	Suspense,
-} from 'solid-js';
+import { Component, createSignal, ErrorBoundary, For, Setter, Show, Suspense } from 'solid-js';
 import Chip from '~/shared/components/Chip';
 import { graphqlClient } from '~/shared/GraphQLClient';
+import { FaSolidChevronDown, FaSolidChevronUp } from 'solid-icons/fa';
 
 const getGames = gql`
 	query getGames {
@@ -46,6 +36,7 @@ type UnitGroups = { unit_groups: { name: string; id: number }[] };
 type Units = { units: { name: string; id: number }[] };
 
 export const Sidebar: Component = () => {
+	const [expanded, setExpanded] = createSignal<boolean>(false);
 	const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
 	const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
 	const [selectedUnitIds, setSelectedUnitIds] = createSignal<number[]>([]);
@@ -77,34 +68,49 @@ export const Sidebar: Component = () => {
 
 	return (
 		<aside class="bg-slate-800 rounded-lg p-4">
-			<h3 class="font-bold text-xl mb-4">Filters</h3>
+			<div class={`flex justify-between items-center ${expanded() && 'mb-4'} lg:mb-4`}>
+				<h3 class="font-bold text-xl ">Filters</h3>
+				<button onClick={() => setExpanded(!expanded())} class="lg:hidden">
+					<Show when={expanded()}>
+						<FaSolidChevronDown></FaSolidChevronDown>
+					</Show>
+					<Show when={!expanded()}>
+						<FaSolidChevronUp></FaSolidChevronUp>
+					</Show>
+				</button>
+			</div>
+
 			<Suspense fallback={<p>loading...</p>}>
 				<ErrorBoundary fallback={<p>error</p>}>
-					<div class="mb-4">
-						<label class="font-bold block mb-2" htmlFor="select-game">
-							Games
-						</label>
-						<select
-							value={selectedGameId() ?? 'placeholder'}
-							class="select"
-							onChange={(event) => setSelectedGameId(parseInt(event.currentTarget.value))}
-							name="games"
-							id="select-game"
-						>
-							<option value="placeholder">placeholder</option>
-							<For each={games()?.games}>{(game) => <option value={game.id}>{game.name}</option>}</For>
-						</select>
-					</div>
-					<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
-					<Units
-						setSelectedUnitIds={setSelectedUnitIds}
-						units={unitData()}
-						selectedUnitsIds={selectedUnitIds()}
-					/>
-					<div class="mb-4">
-						<button onClick={() => clearFilters()} class="button button-secondary">
-							Clear filters
-						</button>
+					<div class={`${expanded() ? 'block' : 'hidden'} lg:block`}>
+						<div class="mb-4">
+							<label class="font-bold block mb-2" htmlFor="select-game">
+								Games
+							</label>
+							<select
+								value={selectedGameId() ?? 'placeholder'}
+								class="select"
+								onChange={(event) => setSelectedGameId(parseInt(event.currentTarget.value))}
+								name="games"
+								id="select-game"
+							>
+								<option value="placeholder">placeholder</option>
+								<For each={games()?.games}>
+									{(game) => <option value={game.id}>{game.name}</option>}
+								</For>
+							</select>
+						</div>
+						<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
+						<Units
+							setSelectedUnitIds={setSelectedUnitIds}
+							units={unitData()}
+							selectedUnitsIds={selectedUnitIds()}
+						/>
+						<div class="mb-4">
+							<button onClick={() => clearFilters()} class="button button-secondary">
+								Clear filters
+							</button>
+						</div>
 					</div>
 				</ErrorBoundary>
 			</Suspense>
