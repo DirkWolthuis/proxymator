@@ -3,6 +3,7 @@ import { Component, createSignal, ErrorBoundary, For, Setter, Show, Suspense } f
 import Chip from '~/shared/components/Chip';
 import { graphqlClient } from '~/shared/GraphQLClient';
 import { FaSolidChevronDown, FaSolidChevronUp } from 'solid-icons/fa';
+import { useFilter } from '~/context/FilterContext';
 
 const getGames = gql`
 	query getGames {
@@ -37,9 +38,10 @@ type Units = { units: { name: string; id: number }[] };
 
 export const Sidebar: Component = () => {
 	const [expanded, setExpanded] = createSignal<boolean>(false);
-	const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
-	const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
-	const [selectedUnitIds, setSelectedUnitIds] = createSignal<number[]>([]);
+	const [
+		{ selectedGameId, selectedUnitGroupId, selectedUnitIds },
+		{ setSelectedGameId, setSelectedUnitGroupId, setSelectedUnitIds },
+	] = useFilter();
 
 	const [games] = graphqlClient<Games>(getGames, {});
 	const [unitGroups] = graphqlClient<UnitGroups>(getUnitGroups, () =>
