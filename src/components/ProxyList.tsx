@@ -9,6 +9,10 @@ const getProxies = gql`
 		proxies {
 			id
 			name
+			url
+			image_url
+			price
+			creator_name
 			proxy_units {
 				unit {
 					name
@@ -24,6 +28,10 @@ const getProxiesByUnitGameId = gql`
 		proxies(where: { proxy_units: { unit: { unit_group: { game_id: { _eq: $game_id } } } } }) {
 			name
 			id
+			url
+			image_url
+			price
+			creator_name
 		}
 	}
 `;
@@ -33,6 +41,10 @@ const getProxiesByUnitGroupId = gql`
 		proxies(where: { proxy_units: { unit: { unit_group_id: { _eq: $unit_group_id } } } }) {
 			name
 			id
+			url
+			image_url
+			price
+			creator_name
 		}
 	}
 `;
@@ -42,6 +54,10 @@ const getProxiesByUnitIds = gql`
 		proxies(where: { proxy_units: { unit_id: { _in: $unit_ids } } }) {
 			id
 			name
+			url
+			image_url
+			price
+			creator_name
 		}
 	}
 `;
@@ -80,22 +96,18 @@ export default function ProxyList(props: ProxyListProps) {
 			<ErrorBoundary fallback={<p>stuk</p>}>
 				<Switch fallback={<p>fallback</p>}>
 					<Match when={selectedUnitIds().length > 0}>
-						<For each={proxiesByUnitIds()?.proxies}>
-							{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}
-						</For>
+						<For each={proxiesByUnitIds()?.proxies}>{(proxy) => <ProxyItem {...proxy}></ProxyItem>}</For>
 					</Match>
 					<Match when={selectedUnitGroupId()}>
 						<For each={proxiesByUnitGroupId()?.proxies}>
-							{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}
+							{(proxy) => <ProxyItem {...proxy}></ProxyItem>}
 						</For>
 					</Match>
 					<Match when={selectedGameId()}>
-						<For each={proxiesByGameId()?.proxies}>
-							{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}
-						</For>
+						<For each={proxiesByGameId()?.proxies}>{(proxy) => <ProxyItem {...proxy}></ProxyItem>}</For>
 					</Match>
 					<Match when={proxies()}>
-						<For each={proxies()?.proxies}>{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}</For>
+						<For each={proxies()?.proxies}>{(proxy) => <ProxyItem {...proxy}></ProxyItem>}</For>
 					</Match>
 				</Switch>
 			</ErrorBoundary>

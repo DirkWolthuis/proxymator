@@ -69,7 +69,7 @@ export const Sidebar: Component = () => {
 	};
 
 	return (
-		<aside class="bg-slate-800 rounded-lg p-4">
+		<aside class="bg-slate-800 rounded-lg p-4 mb-8">
 			<div class={`flex justify-between items-center ${expanded() && 'mb-4'} lg:mb-4`}>
 				<h3 class="font-bold text-xl ">Filters</h3>
 				<button onClick={() => setExpanded(!expanded())} class="lg:hidden">
