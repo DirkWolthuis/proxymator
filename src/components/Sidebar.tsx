@@ -1,5 +1,5 @@
 import { gql } from '@solid-primitives/graphql';
-import { Component, createSignal, ErrorBoundary, For, Setter, Show, Suspense } from 'solid-js';
+import { Component, createEffect, createSignal, ErrorBoundary, For, Setter, Show, Suspense } from 'solid-js';
 import Chip from '~/shared/components/Chip';
 import { graphqlClient } from '~/shared/GraphQLClient';
 import { FaSolidChevronDown, FaSolidChevronUp } from 'solid-icons/fa';
