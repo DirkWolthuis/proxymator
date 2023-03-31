@@ -2,6 +2,7 @@ import { gql } from '@solid-primitives/graphql';
 import { createEffect, ErrorBoundary, For, Match, Suspense, Switch } from 'solid-js';
 import { useFilter } from '~/context/FilterContext';
 import { graphqlClient } from '~/shared/GraphQLClient';
+import ProxyItem from './ProxyItem';
 
 const getProxies = gql`
 	query GetProxies {
@@ -79,16 +80,22 @@ export default function ProxyList(props: ProxyListProps) {
 			<ErrorBoundary fallback={<p>stuk</p>}>
 				<Switch fallback={<p>fallback</p>}>
 					<Match when={selectedUnitIds().length > 0}>
-						<For each={proxiesByUnitIds()?.proxies}>{(proxy) => <p>{proxy.name}</p>}</For>
+						<For each={proxiesByUnitIds()?.proxies}>
+							{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}
+						</For>
 					</Match>
 					<Match when={selectedUnitGroupId()}>
-						<For each={proxiesByUnitGroupId()?.proxies}>{(proxy) => <p>{proxy.name}</p>}</For>
+						<For each={proxiesByUnitGroupId()?.proxies}>
+							{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}
+						</For>
 					</Match>
 					<Match when={selectedGameId()}>
-						<For each={proxiesByGameId()?.proxies}>{(proxy) => <p>{proxy.name}</p>}</For>
+						<For each={proxiesByGameId()?.proxies}>
+							{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}
+						</For>
 					</Match>
 					<Match when={proxies()}>
-						<For each={proxies()?.proxies}>{(proxy) => <p>{proxy.name}</p>}</For>
+						<For each={proxies()?.proxies}>{(proxy) => <ProxyItem proxyItem={proxy}></ProxyItem>}</For>
 					</Match>
 				</Switch>
 			</ErrorBoundary>
