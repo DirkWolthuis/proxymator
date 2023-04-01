@@ -1,3 +1,4 @@
+import { A } from '@solidjs/router';
 import { createSignal } from 'solid-js';
 
 export default function Header() {
@@ -7,7 +8,10 @@ export default function Header() {
 		<header class="bg-slate-800 border-b border-slate-700 py-4">
 			<div class="container">
 				<div class="flex justify-between items-center space-x-4 md:space-x-12">
-					<h1 class="font-mono text-xl">Proxymator</h1>
+					<A href="/">
+						<h1 class="font-mono text-xl">Proxymator</h1>
+					</A>
+
 					{/* <div class="grow hidden md:block">
 						<input
 							placeholder="Look up models by game, army or name"
@@ -19,7 +23,9 @@ export default function Header() {
 						{/* <button onClick={() => setSearchActive(true)} class="button button-secondary md:hidden">
 							search
 						</button> */}
-						<button class="button button-primary">Submit</button>
+						<A href="/submit-proxy">
+							<button class="button button-primary">Submit</button>
+						</A>
 					</div>
 				</div>
 			</div>

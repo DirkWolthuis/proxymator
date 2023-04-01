@@ -25,3 +25,7 @@
 .select {
 	@apply w-full bg-slate-500 h-10 rounded px-4 focus:outline focus:outline-2 focus:outline-pink-500;
 }
+
+.input {
+	@apply w-full bg-slate-500 h-10 rounded px-4 focus:outline focus:outline-2 focus:outline-pink-500;
+}

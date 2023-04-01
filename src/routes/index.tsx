@@ -8,10 +8,10 @@ export default function Home() {
 			<div class="container">
 				<div class="section">
 					<div class="flex flex-wrap lg:flex-nowrap lg:space-x-16">
-						<div class="w-full lg:w-5/12 xl:w-4/12">
+						<div class="w-full lg:w-4/12">
 							<Sidebar></Sidebar>
 						</div>
-						<main class="w-full lg:w-auto">
+						<main class="w-full lg:w-8/12">
 							<ProxyList />
 						</main>
 					</div>
