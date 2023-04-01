@@ -17,7 +17,6 @@ interface ProxyUnit {
 }
 
 const ProxyItem: Component<Proxy & { proxy_units: ProxyUnit[] }> = (props) => {
-	console.log(props);
 	return (
 		<div class="flex flex-wrap space-x-0 md:space-x-6 border-b pb-8 mb-8 border-slate-700 md:flex-nowrap">
 			<div
