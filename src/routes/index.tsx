@@ -7,11 +7,11 @@ export default function Home() {
 		<FilterProvider>
 			<div class="container">
 				<div class="section">
-					<div class="flex flex-wrap lg:space-x-16">
+					<div class="flex flex-wrap lg:flex-nowrap lg:space-x-16">
 						<div class="w-full lg:w-5/12 xl:w-4/12">
 							<Sidebar></Sidebar>
 						</div>
-						<main>
+						<main class="w-full lg:w-auto">
 							<ProxyList />
 						</main>
 					</div>

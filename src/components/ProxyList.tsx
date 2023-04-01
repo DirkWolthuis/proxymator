@@ -32,6 +32,12 @@ const getProxiesByUnitGameId = gql`
 			image_url
 			price
 			creator_name
+			proxy_units {
+				unit {
+					name
+					id
+				}
+			}
 		}
 	}
 `;
@@ -45,6 +51,12 @@ const getProxiesByUnitGroupId = gql`
 			image_url
 			price
 			creator_name
+			proxy_units {
+				unit {
+					name
+					id
+				}
+			}
 		}
 	}
 `;
@@ -58,6 +70,12 @@ const getProxiesByUnitIds = gql`
 			image_url
 			price
 			creator_name
+			proxy_units {
+				unit {
+					name
+					id
+				}
+			}
 		}
 	}
 `;
