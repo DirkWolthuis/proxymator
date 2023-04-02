@@ -1,3 +1,4 @@
+import { makeAbortable } from '@solid-primitives/resource';
 import { Component, Match, Show, Suspense, Switch, createResource, createSignal } from 'solid-js';
 import { Games, UnitGroups, Units, getGames, getUnitGroups, getUnits } from '~/components/Sidebar';
 import { graphqlClient } from '~/shared/GraphQLClient';
@@ -23,8 +24,56 @@ const initSteps = [
 	},
 ];
 
-const enrichProxy = async (url: string) =>
-	(await fetch(`http://localhost:3000/api/proxy-enrich`, { method: 'POST' })).json();
+const isValidUrl = (str: string) => {
+	// Regular expression for validating URLs
+	var pattern = new RegExp(
+		'^(https?:\\/\\/)?' + // protocol
+			'((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+			'((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+			'(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+			'(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+			'(\\#[-a-z\\d_]*)?$',
+		'i',
+	); // fragment locator
+
+	// Return true if the input string matches the regular expression pattern
+	return pattern.test(str);
+};
+
+// List of allowed domains
+const allowedDomains = ['www.myminifactory.com', 'myminifactory.com'];
+
+const getHostnameFromUrl = (url: string) => {
+	const parsedUrl = new URL(url);
+	return parsedUrl.hostname;
+};
+
+// Arrow function to check if a URL is from an allowed domain
+const isUrlFromAllowedDomain = (url: string) => {
+	const domain = getHostnameFromUrl(url);
+
+	return allowedDomains.includes(domain);
+};
+
+const doesUrlContainPath = (url: string, path: string) => {
+	const parsedUrl = new URL(url);
+	const urlPath = parsedUrl.pathname;
+
+	return urlPath.includes(path);
+};
+
+const validateUrl = (url: string): boolean => {
+	if (!isValidUrl(url) || !isUrlFromAllowedDomain(url)) {
+		return false;
+	}
+	switch (getHostnameFromUrl(url)) {
+		case 'www.myminifactory.com':
+		case 'myminifactory.com':
+			return doesUrlContainPath(url, 'object');
+		default:
+			return false;
+	}
+};
 
 const SubmitProxy: Component<{}> = (props) => {
 	const [steps, setSteps] = createSignal<typeof initSteps>(initSteps);
@@ -106,13 +155,21 @@ const SubmitProxy: Component<{}> = (props) => {
 export default SubmitProxy;
 
 const UrlStep: Component<{}> = (props) => {
+	const [signal, abort] = makeAbortable({ timeout: 10000 });
+	const enrichProxy = async (url: string) =>
+		(await fetch(`http://localhost:3000/api/proxy-enrich`, { method: 'POST', signal: signal() })).json();
 	const [url, setUrl] = createSignal<string>();
-	const [urlWithData] = createResource(url, enrichProxy);
+	const sanatizedUrl = () => (url() && validateUrl(url()!) ? url() : null);
+	const [urlWithData] = createResource(sanatizedUrl, enrichProxy);
+
+	console.log(
+		validateUrl('https://www.myminifactory.com/es/object/3d-print-mounted-skeletons-highlands-miniatures-253233'),
+	);
 
 	return (
 		<>
 			<label class="font-bold block" htmlFor="">
-				MyMiniFactory url
+				MyMiniFactory url {url()}{' '}
 			</label>
 			<span class="text-slate-400 mt-1 block">We currently only support links to MyMiniFactory pages</span>
 			<input
