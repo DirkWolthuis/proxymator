@@ -1,28 +1,58 @@
 import { makeAbortable } from '@solid-primitives/resource';
-import { Component, Match, Show, Suspense, Switch, createResource, createSignal } from 'solid-js';
+import {
+	Accessor,
+	Component,
+	Match,
+	Setter,
+	Show,
+	Suspense,
+	Switch,
+	createEffect,
+	createResource,
+	createSignal,
+} from 'solid-js';
+import ProxyItem from '~/components/ProxyItem';
 import { Games, UnitGroups, Units, getGames, getUnitGroups, getUnits } from '~/components/Sidebar';
 import { graphqlClient } from '~/shared/GraphQLClient';
 
-const initSteps = [
+interface Step {
+	id: number;
+	title: string;
+	valid: Accessor<boolean>;
+	setValid: Setter<boolean>;
+}
+
+interface UrlData {
+	name: string;
+	price: string;
+	imgUrl: string;
+	creatorName: string;
+	url: string;
+}
+
+const steps = [
 	{
 		id: 1,
-		title: 'Insert url to proxy model',
+		title: 'Step 1: Insert url to proxy model',
 		valid: false,
-		active: true,
 	},
 	{
 		id: 2,
 		title: 'Select units that the model proxies',
 		valid: false,
-		active: false,
 	},
 	{
 		id: 3,
 		title: 'Thanks for submitting',
 		valid: true,
-		active: false,
 	},
 ];
+
+const initSteps = (): Step[] =>
+	steps.map((step) => {
+		const [valid, setValid] = createSignal(false);
+		return { ...step, valid, setValid };
+	});
 
 const isValidUrl = (str: string) => {
 	// Regular expression for validating URLs
@@ -76,9 +106,10 @@ const validateUrl = (url: string): boolean => {
 };
 
 const SubmitProxy: Component<{}> = (props) => {
-	const [steps, setSteps] = createSignal<typeof initSteps>(initSteps);
-	const activeStep = () => steps().find((step) => step.active);
-
+	const steps = initSteps();
+	const [activeStep, setActiveStep] = createSignal(1);
+	const [urlWithData, setUrlWithData] = createSignal<UrlData>();
+	createEffect(() => console.log(urlWithData()));
 	// const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
 	// const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
 	// const [selectedUnitIds, setSelectedUnitIds] = createSignal<number[]>([]);
@@ -103,34 +134,29 @@ const SubmitProxy: Component<{}> = (props) => {
 	// const unitData = () => (selectedUnitGroupId() ? units() : undefined);
 
 	const onNextStep = () => {
-		const activeStep = steps().find((step) => step.active);
-		if (activeStep?.valid) {
-			setSteps(
-				steps().map((step) => {
-					if (step.id === activeStep.id + 1) {
-						return {
-							...step,
-							active: true,
-						};
-					} else {
-						return step;
-					}
-				}),
-			);
-		}
+		setActiveStep(activeStep() + 1);
+	};
+
+	const validateStep = (valid: boolean, stepId: number) => {
+		steps.find((step) => step.id === stepId)?.setValid(valid);
 	};
 
 	return (
 		<div class="container">
 			<div class="section">
 				<Switch>
-					<Match when={activeStep()?.id === 1}>
-						<UrlStep />
+					<Match when={activeStep() === 1}>
+						<UrlStep
+							step={steps[0]}
+							validateStep={validateStep}
+							nextStep={onNextStep}
+							saveUrlData={setUrlWithData}
+						/>
 					</Match>
-					<Match when={activeStep()?.id === 2}>Step 2</Match>
-					<Match when={activeStep()?.id === 3}>Step 3</Match>
+					<Match when={activeStep() === 2}>Step 2</Match>
+					<Match when={activeStep() === 3}>Step 3</Match>
 				</Switch>
-				<Show when={activeStep()?.valid && (activeStep()?.id === 1 || activeStep()?.id === 2)}>
+				<Show when={steps[activeStep() - 1]?.valid() && (activeStep() === 1 || activeStep() === 2)}>
 					<button onClick={onNextStep} class="button button-primary">
 						Next
 					</button>
@@ -154,32 +180,72 @@ const SubmitProxy: Component<{}> = (props) => {
 
 export default SubmitProxy;
 
-const UrlStep: Component<{}> = (props) => {
+const UrlStep: Component<{
+	step: Step;
+	validateStep: (valid: boolean, stepId: number) => void;
+	nextStep: () => void;
+	saveUrlData: Setter<{
+		name: string;
+		price: string;
+		imgUrl: string;
+		creatorName: string;
+		url: string;
+	}>;
+}> = (props) => {
 	const [signal, abort] = makeAbortable({ timeout: 10000 });
-	const enrichProxy = async (url: string) =>
-		(await fetch(`http://localhost:3000/api/proxy-enrich`, { method: 'POST', signal: signal() })).json();
+	const enrichProxy = async (url: string): Promise<UrlData> =>
+		(
+			await fetch(`http://localhost:3000/api/proxy-enrich`, {
+				method: 'POST',
+				signal: signal(),
+				body: JSON.stringify({ url: url }),
+			})
+		).json();
 	const [url, setUrl] = createSignal<string>();
 	const sanatizedUrl = () => (url() && validateUrl(url()!) ? url() : null);
 	const [urlWithData] = createResource(sanatizedUrl, enrichProxy);
 
-	console.log(
-		validateUrl('https://www.myminifactory.com/es/object/3d-print-mounted-skeletons-highlands-miniatures-253233'),
-	);
+	createEffect(() => {
+		if (urlWithData()) {
+			props.validateStep(true, props.step.id);
+			props.saveUrlData(urlWithData()!);
+		}
+	});
 
 	return (
 		<>
-			<label class="font-bold block" htmlFor="">
-				MyMiniFactory url {url()}{' '}
-			</label>
-			<span class="text-slate-400 mt-1 block">We currently only support links to MyMiniFactory pages</span>
-			<input
-				value={url() ?? ''}
-				onInput={(e) => setUrl(e.currentTarget.value)}
-				placeholder=""
-				class="mt-2 input"
-				type="text"
-			/>
-			<Suspense>{JSON.stringify(urlWithData())}</Suspense>
+			<div class="w-full lg:w-1/2">
+				<h2 class="text-2xl font-bold">{props.step.title}</h2>
+				<label class="mt-4 font-bold block" htmlFor="">
+					MyMiniFactory url
+				</label>
+				<span class="text-slate-400 mt-1 block">We currently only support links to MyMiniFactory pages</span>
+				<input
+					value={url() ?? ''}
+					onInput={(e) => setUrl(e.currentTarget.value)}
+					placeholder=""
+					class="mt-2 input"
+					type="text"
+				/>
+			</div>
+			<div class="w-full lg:w-1/2 mt-8">
+				<Suspense>
+					<Show when={urlWithData()}>
+						<label class="font-bold block" htmlFor="">
+							Page preview
+						</label>
+						<div class="mt-4">
+							<ProxyItem
+								creator_name={urlWithData()?.creatorName!}
+								name={urlWithData()?.name!}
+								image_url={urlWithData()?.imgUrl!}
+								price={urlWithData()?.price!}
+								url={'asd'}
+							></ProxyItem>
+						</div>
+					</Show>
+				</Suspense>
+			</div>
 		</>
 	);
 };

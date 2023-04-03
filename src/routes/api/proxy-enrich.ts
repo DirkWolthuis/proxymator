@@ -10,26 +10,21 @@ const sanatizeText = (text: string) => {
 	return text.replace(regex, '').trim();
 };
 
-export async function GET({ params }: APIEvent) {
-	const response = await fetch(
-		'https://www.myminifactory.com/es/object/3d-print-mounted-skeletons-highlands-miniatures-253233',
-	);
+export async function GET({}: APIEvent) {}
+
+export async function POST({ params, request }: APIEvent) {
+	const { url } = await new Response(request.body).json();
+
+	const response = await fetch(url);
 	const body = await response.text();
 	const $ = cheerio.load(body);
 
 	const name = $('.obj-title.hide-for-large-up').html();
 	const price = $('.price-title').html();
-	return json({ name: name && sanatizeText(name), price: price });
-}
+	const imgUrl = $('img.prdimg-gallery').attr('src')?.replace('70X70', '720X720');
+	const creatorName = $('.designerWordFlex p a').html();
 
-export async function POST({ params }: APIEvent) {
-	// console.log(params);
-	// const response = await fetch(
-	// 	'https://www.myminifactory.com/es/object/3d-print-mounted-skeletons-highlands-miniatures-253233',
-	// );
-	// const body = await response.text();
-	// const $ = cheerio.load(body);
-	// return json({ name: $('obj-title').text() });
+	return json({ name: name && sanatizeText(name), price: price, imgUrl: imgUrl, creatorName, url: url });
 }
 
 export function PATCH() {
