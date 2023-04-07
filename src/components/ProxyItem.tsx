@@ -29,10 +29,10 @@ const ProxyItem: Component<Proxy & { proxy_units?: ProxyUnit[] }> = (props) => {
 				<h6 class="text-sm  italic mt-2">
 					By: {propsWithDefaults?.creator_name} - Price: {propsWithDefaults.price}
 				</h6>
-				<div class="space-x-2 mt-6">
+				<div class="mt-6">
 					<For each={propsWithDefaults.proxy_units}>
 						{(proxyUnit) => (
-							<span class="bg-slate-500 inline-flex items-center h-8 px-3 text-xs mr-4 mb-2 rounded gap-2">
+							<span class="bg-slate-500 inline-flex items-center mr-2 h-8 px-3 text-xs mb-2 rounded gap-2">
 								{proxyUnit.unit.name}
 							</span>
 						)}

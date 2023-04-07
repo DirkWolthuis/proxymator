@@ -1,7 +1,9 @@
+import { gql } from '@solid-primitives/graphql';
 import { makeAbortable } from '@solid-primitives/resource';
 import {
 	Accessor,
 	Component,
+	For,
 	Match,
 	Setter,
 	Show,
@@ -10,6 +12,7 @@ import {
 	createEffect,
 	createResource,
 	createSignal,
+	ErrorBoundary,
 } from 'solid-js';
 import ProxyItem from '~/components/ProxyItem';
 import { Games, UnitGroups, Units, getGames, getUnitGroups, getUnits } from '~/components/Sidebar';
@@ -105,33 +108,35 @@ const validateUrl = (url: string): boolean => {
 	}
 };
 
-const SubmitProxy: Component<{}> = (props) => {
+const SaveProxyWithProxyUnits = gql`
+	mutation SaveProxyWithProxyUnits(
+		$creator_name: String = ""
+		$image_url: String = ""
+		$name: String = ""
+		$price: money = ""
+		$url: String = ""
+		$data: [proxy_units_insert_input!] = {}
+	) {
+		insert_proxies(
+			objects: {
+				creator_name: $creator_name
+				image_url: $image_url
+				name: $name
+				price: $price
+				url: $url
+				proxy_units: { data: $data }
+			}
+		) {
+			affected_rows
+		}
+	}
+`;
+
+const SubmitProxy: Component<{}> = () => {
 	const steps = initSteps();
 	const [activeStep, setActiveStep] = createSignal(1);
 	const [urlWithData, setUrlWithData] = createSignal<UrlData>();
-	createEffect(() => console.log(urlWithData()));
-	// const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
-	// const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
-	// const [selectedUnitIds, setSelectedUnitIds] = createSignal<number[]>([]);
-
-	// const [games] = graphqlClient<Games>(getGames, {});
-	// const [unitGroups] = graphqlClient<UnitGroups>(getUnitGroups, () =>
-	// 	selectedGameId()
-	// 		? {
-	// 				game_id: selectedGameId(),
-	// 		  }
-	// 		: null,
-	// );
-	// const [units] = graphqlClient<Units>(getUnits, () =>
-	// 	selectedUnitGroupId()
-	// 		? {
-	// 				unit_group_id: selectedUnitGroupId(),
-	// 		  }
-	// 		: null,
-	// );
-
-	// const unitGroupsData = () => (selectedGameId() ? unitGroups() : undefined);
-	// const unitData = () => (selectedUnitGroupId() ? units() : undefined);
+	const [selectedUnits, setSelectedUnits] = createSignal<{ name: string; id: number }[]>([]);
 
 	const onNextStep = () => {
 		setActiveStep(activeStep() + 1);
@@ -153,26 +158,27 @@ const SubmitProxy: Component<{}> = (props) => {
 							saveUrlData={setUrlWithData}
 						/>
 					</Match>
-					<Match when={activeStep() === 2}>Step 2</Match>
-					<Match when={activeStep() === 3}>Step 3</Match>
+					<Match when={activeStep() === 2}>
+						<SelectUnitsStep
+							validateStep={validateStep}
+							step={steps[1]}
+							selectedUnits={selectedUnits()}
+							setSelectedUnits={setSelectedUnits}
+						/>
+					</Match>
+					<Match when={activeStep() === 3}>
+						<SaveStep
+							urlWithData={urlWithData()}
+							selectedUnits={selectedUnits()}
+							step={steps[2]}
+						></SaveStep>
+					</Match>
 				</Switch>
 				<Show when={steps[activeStep() - 1]?.valid() && (activeStep() === 1 || activeStep() === 2)}>
 					<button onClick={onNextStep} class="button button-primary">
 						Next
 					</button>
 				</Show>
-				{/* <div class="w-4/12 mt-4">
-					<label class="font-bold block mb-4" htmlFor="">
-						Select the units the model can proxy
-					</label>
-					<Games setSelectedGameId={setSelectedGameId} games={games()}></Games>
-					<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
-					<Units
-						setSelectedUnitIds={setSelectedUnitIds}
-						units={unitData()}
-						selectedUnitsIds={selectedUnitIds()}
-					/>
-				</div> */}
 			</div>
 		</div>
 	);
@@ -246,6 +252,120 @@ const UrlStep: Component<{
 					</Show>
 				</Suspense>
 			</div>
+		</>
+	);
+};
+
+const SelectUnitsStep: Component<{
+	step: Step;
+	validateStep: (valid: boolean, stepId: number) => void;
+	setSelectedUnits: Setter<
+		{
+			name: string;
+			id: number;
+		}[]
+	>;
+	selectedUnits: {
+		name: string;
+		id: number;
+	}[];
+}> = (props) => {
+	const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
+	const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
+
+	const [games] = graphqlClient<Games>(getGames, {});
+	const [unitGroups] = graphqlClient<UnitGroups>(getUnitGroups, () =>
+		selectedGameId()
+			? {
+					game_id: selectedGameId(),
+			  }
+			: null,
+	);
+	const [units] = graphqlClient<Units>(getUnits, () =>
+		selectedUnitGroupId()
+			? {
+					unit_group_id: selectedUnitGroupId(),
+			  }
+			: null,
+	);
+
+	const onToggleUnitId = (id: number) => {
+		if (selectedUnitIds()?.find((suId) => suId === id)) {
+			props.setSelectedUnits(props.selectedUnits?.filter((unit) => unit.id !== id));
+		} else {
+			props.setSelectedUnits([...props.selectedUnits, units()?.units.find((unit) => unit.id === id)!]);
+		}
+	};
+
+	const unitGroupsData = () => (selectedGameId() ? unitGroups() : undefined);
+	const unitData = () => (selectedUnitGroupId() ? units() : undefined);
+	const selectedUnitIds = () => props.selectedUnits.map((unit) => unit.id);
+	createEffect(() => {
+		if (props.selectedUnits.length > 0) {
+			props.validateStep(true, props.step.id);
+		} else {
+			props.validateStep(false, props.step.id);
+		}
+	});
+	return (
+		<div class="flex flex-wrap lg:flex-nowrap space-x-8">
+			<div class="w-full lg:w-1/2">
+				<h2 class="text-2xl font-bold">{props.step.title}</h2>
+				<div class="mt-4">
+					<Suspense>
+						<Games setSelectedGameId={setSelectedGameId} games={games()}></Games>
+						<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
+						<div class="max-h-[400px] overflow-y-scroll">
+							<Units
+								setSelectedUnitIds={onToggleUnitId}
+								units={unitData()}
+								selectedUnitIds={selectedUnitIds()}
+							/>
+						</div>
+					</Suspense>
+				</div>
+			</div>
+			<div class="w-full lg:w-1/2">
+				<h2 class="text-2xl font-bold">Selected units</h2>
+				<div class="mt-4">
+					<div class="mt-6">
+						<For each={props.selectedUnits}>
+							{(unit) => (
+								<span class="bg-slate-500 inline-flex items-center mr-2 h-8 px-3 text-xs mb-2 rounded gap-2">
+									{unit.name}
+								</span>
+							)}
+						</For>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+const SaveStep: Component<{
+	step: Step;
+	selectedUnits: {
+		name: string;
+		id: number;
+	}[];
+	urlWithData: UrlData | undefined;
+}> = (props) => {
+	const [result] = graphqlClient(SaveProxyWithProxyUnits, {
+		data: props.selectedUnits.map((unit) => ({ unit_id: unit.id })),
+		creator_name: props.urlWithData?.creatorName,
+		image_url: props.urlWithData?.imgUrl,
+		url: props.urlWithData?.url,
+		price: props.urlWithData?.price,
+		name: props.urlWithData?.name,
+	});
+	return (
+		<>
+			<ErrorBoundary fallback={<p>error</p>}>
+				<Suspense fallback={<p>Loading</p>}>
+					<p>Saved!</p>
+				</Suspense>
+			</ErrorBoundary>
 		</>
 	);
 };

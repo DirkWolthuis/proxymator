@@ -68,6 +68,14 @@ export const Sidebar: Component = () => {
 		setSelectedUnitIds([]);
 	};
 
+	const onToggleUnitId = (id: number) => {
+		if (selectedUnitIds()?.find((suId) => suId === id)) {
+			setSelectedUnitIds(selectedUnitIds()?.filter((suId) => suId !== id));
+		} else {
+			setSelectedUnitIds([...selectedUnitIds(), id]);
+		}
+	};
+
 	return (
 		<aside class="bg-slate-800 rounded-lg p-4 mb-8">
 			<div class={`flex justify-between items-center ${expanded() && 'mb-4'} lg:mb-4`}>
@@ -88,9 +96,9 @@ export const Sidebar: Component = () => {
 						<Games setSelectedGameId={setSelectedGameId} games={games()}></Games>
 						<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
 						<Units
-							setSelectedUnitIds={setSelectedUnitIds}
+							setSelectedUnitIds={onToggleUnitId}
 							units={unitData()}
-							selectedUnitsIds={selectedUnitIds()}
+							selectedUnitIds={selectedUnitIds()}
 						/>
 						<div class="mb-4">
 							<button onClick={() => clearFilters()} class="button button-secondary">
@@ -159,19 +167,11 @@ export const UnitGroups: Component<UnitGroupsProps> = (props) => {
 
 interface UnitsProps {
 	units: Units | undefined;
-	selectedUnitsIds: number[];
-	setSelectedUnitIds: Setter<number[]>;
+	selectedUnitIds: number[];
+	setSelectedUnitIds: (id: any) => void;
 }
 
 export const Units: Component<UnitsProps> = (props) => {
-	const onToggleChip = (id: number) => {
-		if (props.selectedUnitsIds?.find((suId) => suId === id)) {
-			props.setSelectedUnitIds(props.selectedUnitsIds?.filter((suId) => suId !== id));
-		} else {
-			props.setSelectedUnitIds([...props.selectedUnitsIds, id]);
-		}
-	};
-
 	return (
 		<div class="mb-4">
 			<label class="font-bold block mb-2" htmlFor="select-game">
@@ -185,8 +185,8 @@ export const Units: Component<UnitsProps> = (props) => {
 					{(unit) => (
 						<Chip
 							value={unit.id}
-							onChange={(id) => onToggleChip(id)}
-							selected={!!props.selectedUnitsIds?.find((id) => id === unit.id)}
+							onChange={(id) => props.setSelectedUnitIds(id)}
+							selected={!!props.selectedUnitIds?.find((id) => id === unit.id)}
 							name={unit.name}
 						></Chip>
 					)}
