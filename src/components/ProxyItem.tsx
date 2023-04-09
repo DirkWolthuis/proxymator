@@ -1,12 +1,13 @@
 import { Component, For, mergeProps } from 'solid-js';
 
-interface Proxy {
+export interface Proxy {
 	id?: number;
 	name: string;
 	url?: string;
 	image_url: string;
 	price: string;
 	creator_name: string;
+	proxy_units?: ProxyUnit[];
 }
 
 interface ProxyUnit {
@@ -16,7 +17,7 @@ interface ProxyUnit {
 	};
 }
 
-const ProxyItem: Component<Proxy & { proxy_units?: ProxyUnit[] }> = (props) => {
+const ProxyItem: Component<Proxy> = (props) => {
 	const propsWithDefaults = mergeProps({ proxy_units: [] }, props);
 	return (
 		<div class="flex flex-wrap space-x-0 md:space-x-6 border-b pb-8 mb-8 border-slate-700 md:flex-nowrap">

@@ -2,7 +2,7 @@ import { gql } from '@solid-primitives/graphql';
 import { createEffect, ErrorBoundary, For, Match, Suspense, Switch } from 'solid-js';
 import { useFilter } from '~/context/FilterContext';
 import { graphqlClient } from '~/shared/GraphQLClient';
-import ProxyItem from './ProxyItem';
+import ProxyItem, { Proxy } from './ProxyItem';
 
 const getProxies = gql`
 	query GetProxies {
@@ -84,25 +84,23 @@ interface ProxyListProps {}
 
 export default function ProxyList(props: ProxyListProps) {
 	const [{ selectedGameId, selectedUnitGroupId, selectedUnitIds }] = useFilter();
-	const [proxies] = graphqlClient<{ proxies: { name: string; id: number }[] }>(getProxies);
-	const [proxiesByGameId] = graphqlClient<{ proxies: { name: string; id: number }[] }>(getProxiesByUnitGameId, () =>
+	const [proxies] = graphqlClient<{ proxies: Proxy[] }>(getProxies);
+	const [proxiesByGameId] = graphqlClient<{ proxies: Proxy[] }>(getProxiesByUnitGameId, () =>
 		selectedGameId()
 			? {
 					game_id: selectedGameId(),
 			  }
 			: null,
 	);
-	const [proxiesByUnitGroupId] = graphqlClient<{ proxies: { name: string; id: number }[] }>(
-		getProxiesByUnitGroupId,
-		() =>
-			selectedUnitGroupId()
-				? {
-						unit_group_id: selectedUnitGroupId(),
-				  }
-				: null,
+	const [proxiesByUnitGroupId] = graphqlClient<{ proxies: Proxy[] }>(getProxiesByUnitGroupId, () =>
+		selectedUnitGroupId()
+			? {
+					unit_group_id: selectedUnitGroupId(),
+			  }
+			: null,
 	);
-	const [proxiesByUnitIds] = graphqlClient<{ proxies: { name: string; id: number }[] }>(getProxiesByUnitIds, () =>
-		selectedUnitIds().length < 0
+	const [proxiesByUnitIds] = graphqlClient<{ proxies: Proxy[] }>(getProxiesByUnitIds, () =>
+		selectedUnitIds().length > 0
 			? {
 					unit_ids: selectedUnitIds(),
 			  }

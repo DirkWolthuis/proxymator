@@ -132,6 +132,14 @@ const SaveProxyWithProxyUnits = gql`
 	}
 `;
 
+const CheckIfProxyUrlIsUnique = gql`
+	query CheckIfProxyUrlIsUnique($url: String = "") {
+		proxies(where: { url: { _eq: $url } }) {
+			id
+		}
+	}
+`;
+
 const SubmitProxy: Component<{}> = () => {
 	const steps = initSteps();
 	const [activeStep, setActiveStep] = createSignal(1);
@@ -212,11 +220,15 @@ const UrlStep: Component<{
 	const [urlWithData] = createResource(sanatizedUrl, enrichProxy);
 
 	createEffect(() => {
-		if (urlWithData()) {
+		if (urlWithData() && duplicateProxies()?.proxies.length === 0) {
 			props.validateStep(true, props.step.id);
 			props.saveUrlData(urlWithData()!);
 		}
 	});
+
+	const [duplicateProxies] = graphqlClient<{ proxies: any[] }>(CheckIfProxyUrlIsUnique, () =>
+		sanatizedUrl() ? { url: sanatizedUrl() } : null,
+	);
 
 	return (
 		<>
@@ -236,7 +248,10 @@ const UrlStep: Component<{
 			</div>
 			<div class="w-full lg:w-1/2 mt-8">
 				<Suspense>
-					<Show when={urlWithData()}>
+					<Show when={duplicateProxies()?.proxies?.length > 0}>
+						<p>Url already exits</p>
+					</Show>
+					<Show when={duplicateProxies()?.proxies?.length === 0 && urlWithData()}>
 						<label class="font-bold block" htmlFor="">
 							Page preview
 						</label>
@@ -308,7 +323,7 @@ const SelectUnitsStep: Component<{
 		}
 	});
 	return (
-		<div class="flex flex-wrap lg:flex-nowrap space-x-8">
+		<div class="flex flex-wrap lg:flex-nowrap lg:space-x-8">
 			<div class="w-full lg:w-1/2">
 				<h2 class="text-2xl font-bold">{props.step.title}</h2>
 				<div class="mt-4">
@@ -325,18 +340,16 @@ const SelectUnitsStep: Component<{
 					</Suspense>
 				</div>
 			</div>
-			<div class="w-full lg:w-1/2">
+			<div class="w-full lg:w-1/2 mt-8 lg:mt-0">
 				<h2 class="text-2xl font-bold">Selected units</h2>
 				<div class="mt-4">
-					<div class="mt-6">
-						<For each={props.selectedUnits}>
-							{(unit) => (
-								<span class="bg-slate-500 inline-flex items-center mr-2 h-8 px-3 text-xs mb-2 rounded gap-2">
-									{unit.name}
-								</span>
-							)}
-						</For>
-					</div>
+					<For each={props.selectedUnits}>
+						{(unit) => (
+							<span class="bg-slate-500 inline-flex items-center mr-2 h-8 px-3 text-xs mb-2 rounded gap-2">
+								{unit.name}
+							</span>
+						)}
+					</For>
 				</div>
 			</div>
 		</div>
@@ -359,11 +372,19 @@ const SaveStep: Component<{
 		price: props.urlWithData?.price,
 		name: props.urlWithData?.name,
 	});
+
+	createEffect(() => console.log(result.state));
 	return (
 		<>
 			<ErrorBoundary fallback={<p>error</p>}>
+				<Show when={result.state === 'errored'}>
+					<h2>Error</h2>
+				</Show>
+
 				<Suspense fallback={<p>Loading</p>}>
-					<p>Saved!</p>
+					<Show when={result.state === 'ready'}>
+						<p>Saved!</p>
+					</Show>
 				</Suspense>
 			</ErrorBoundary>
 		</>
