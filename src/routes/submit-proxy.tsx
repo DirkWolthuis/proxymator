@@ -209,7 +209,7 @@ const UrlStep: Component<{
 	const [signal, abort] = makeAbortable({ timeout: 10000 });
 	const enrichProxy = async (url: string): Promise<UrlData> =>
 		(
-			await fetch(`http://localhost:3000/api/proxy-enrich`, {
+			await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxy-enrich`, {
 				method: 'POST',
 				signal: signal(),
 				body: JSON.stringify({ url: url }),

@@ -6,7 +6,7 @@ import Header from './components/Header';
 
 const checkPassword = async (password: string): Promise<{ valid: boolean }> =>
 	(
-		await fetch(`http://localhost:3000/api/auth`, {
+		await fetch(`${import.meta.env.VITE_BASE_URL}/api/auth`, {
 			method: 'POST',
 			body: JSON.stringify({ password }),
 		})
