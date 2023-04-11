@@ -14,14 +14,13 @@ const checkPassword = async (password: string): Promise<{ valid: boolean }> =>
 
 export default function Root() {
 	const [password, setPassword] = createSignal('');
-	const [auth, setAuth] = createSignal<boolean>();
+	const [submittedPassword, setSubmittedPassword] = createSignal<string>();
+	const [auth] = createResource(submittedPassword, checkPassword);
 
-	const login = async () => {
-		try {
-			const res = await checkPassword(password());
-			setAuth(res.valid);
-		} catch {}
+	const login = () => {
+		setSubmittedPassword(password());
 	};
+
 	return (
 		<Html lang="en">
 			<Head>

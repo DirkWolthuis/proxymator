@@ -1,31 +1,34 @@
 import { gql } from '@solid-primitives/graphql';
-import { createEffect, ErrorBoundary, For, Match, Suspense, Switch } from 'solid-js';
+import { createEffect, createResource, ErrorBoundary, For, Match, Suspense, Switch } from 'solid-js';
 import { useFilter } from '~/context/FilterContext';
 import { graphqlClient } from '~/shared/GraphQLClient';
 import ProxyItem, { Proxy } from './ProxyItem';
 
-const getProxies = gql`
-	query GetProxies {
-		proxies {
-			id
-			name
-			url
-			image_url
-			price
-			creator_name
-			proxy_units {
-				unit {
-					name
-					id
-				}
-			}
-		}
-	}
-`;
+// const getProxies = gql`
+// 	query GetProxies {
+// 		proxies(order_by: { created_at: desc }) {
+// 			id
+// 			name
+// 			url
+// 			image_url
+// 			price
+// 			creator_name
+// 			proxy_units {
+// 				unit {
+// 					name
+// 					id
+// 				}
+// 			}
+// 		}
+// 	}
+// `;
 
 const getProxiesByUnitGameId = gql`
 	query FilterProxiesByUnitGroupId($game_id: Int!) {
-		proxies(where: { proxy_units: { unit: { unit_group: { game_id: { _eq: $game_id } } } } }) {
+		proxies(
+			order_by: { created_at: desc }
+			where: { proxy_units: { unit: { unit_group: { game_id: { _eq: $game_id } } } } }
+		) {
 			name
 			id
 			url
@@ -44,7 +47,10 @@ const getProxiesByUnitGameId = gql`
 
 const getProxiesByUnitGroupId = gql`
 	query GetProxiesByUnitGroupId($unit_group_id: Int!) {
-		proxies(where: { proxy_units: { unit: { unit_group_id: { _eq: $unit_group_id } } } }) {
+		proxies(
+			order_by: { created_at: desc }
+			where: { proxy_units: { unit: { unit_group_id: { _eq: $unit_group_id } } } }
+		) {
 			name
 			id
 			url
@@ -80,11 +86,19 @@ const getProxiesByUnitIds = gql`
 	}
 `;
 
+const getProxies = async (): Promise<{ proxies: Proxy[] }> =>
+	(
+		await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxies`, {
+			method: 'POST',
+		})
+	).json();
+
 interface ProxyListProps {}
 
 export default function ProxyList(props: ProxyListProps) {
 	const [{ selectedGameId, selectedUnitGroupId, selectedUnitIds }] = useFilter();
-	const [proxies] = graphqlClient<{ proxies: Proxy[] }>(getProxies);
+	const [proxies] = createResource(getProxies);
+	//const [proxies] = graphqlClient<{ proxies: Proxy[] }>(getProxies);
 	const [proxiesByGameId] = graphqlClient<{ proxies: Proxy[] }>(getProxiesByUnitGameId, () =>
 		selectedGameId()
 			? {

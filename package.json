@@ -15,6 +15,7 @@
 		"vite": "^4.1.4"
 	},
 	"dependencies": {
+		"@apollo/client": "^3.7.11",
 		"@solid-primitives/graphql": "^1.5.6",
 		"@solid-primitives/resource": "^0.0.101",
 		"@solidjs/meta": "^0.28.2",
