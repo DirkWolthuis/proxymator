@@ -26,8 +26,10 @@ const ProxyItem: Component<Proxy> = (props) => {
 				class="h-[75px] w-full md:h-[200px] md:w-[200px] bg-center bg-no-repeat bg-cover"
 			></div>
 			<div class="mt-4 md:mt-0">
-				<h3 class="font-bold text-base md:text-xl">{propsWithDefaults?.name}</h3>
-				<h6 class="text-sm  italic mt-2">
+				<a class="hover:underline" href={props.url}>
+					<h3 class="font-bold text-base md:text-xl">{propsWithDefaults?.name}</h3>
+				</a>
+				<h6 class="text-sm italic mt-2">
 					By: {propsWithDefaults?.creator_name} - Price: {propsWithDefaults.price}
 				</h6>
 				<div class="mt-6">
@@ -39,6 +41,11 @@ const ProxyItem: Component<Proxy> = (props) => {
 						)}
 					</For>
 				</div>
+				{/* <div class="mt-2">
+					<a href={props.url}>
+						<button class="button button-primary">See details</button>
+					</a>
+				</div> */}
 			</div>
 		</div>
 	);
