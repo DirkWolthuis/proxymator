@@ -39,6 +39,7 @@ export default function Root() {
 									<div class="w-full md:w-1/2 lg:w-1/3">
 										<label htmlFor="password">Password</label>
 										<input
+											onKeyPress={(event) => event.key === 'Enter' && login()}
 											name="password"
 											class="mt-2 input"
 											type="password"
