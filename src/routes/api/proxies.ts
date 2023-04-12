@@ -26,20 +26,43 @@ const getProxies = gql`
 	}
 `;
 
-export async function POST({ params, request }: APIEvent) {
-	// const { gameId, unitGroupId, unitIds }: { gameId: number; unitGroupId: number; unitIds: number[] } =
-	// 	await new Response(request.body).json();
+const getProxiesByUnitGameId = gql`
+	query FilterProxiesByUnitGroupId($game_id: Int!) {
+		proxies(
+			order_by: { created_at: desc }
+			where: { proxy_units: { unit: { unit_group: { game_id: { _eq: $game_id } } } } }
+		) {
+			name
+			id
+			url
+			image_url
+			price
+			creator_name
+			proxy_units {
+				unit {
+					name
+					id
+				}
+			}
+		}
+	}
+`;
 
-	// if (unitIds?.length > 0) {
-	// 	const res = await client.query({
-	// 		query: getProxies,
-	// 	});
-	// 	return json(res);
-	// }
-	// if (unitGroupId) {
-	// }
-	// if (gameId) {
-	// }
+export async function POST({ params, request }: APIEvent) {
+	const body: { gameId: number; unitGroupId: number; unitIds: number[] } = await new Response(request.body).json();
+
+	if (body?.unitIds?.length > 0) {
+	}
+	if (body?.unitGroupId) {
+	}
+	if (body?.gameId) {
+		const res = await client
+			.query({
+				query: getProxiesByUnitGameId,
+			})
+			.then((res) => res.data);
+		return json(res);
+	}
 	const res = await client
 		.query({
 			query: getProxies,

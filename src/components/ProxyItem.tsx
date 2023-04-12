@@ -21,7 +21,7 @@ const ProxyItem: Component<Proxy> = (props) => {
 	const propsWithDefaults = mergeProps({ proxy_units: [] }, props);
 	return (
 		<div class="flex flex-wrap space-x-0 md:space-x-6 border-b pb-8 mb-8 border-slate-700 md:flex-nowrap">
-			<a href={props.url}>
+			<a class="h-[75px] w-full md:h-[200px] md:w-[200px] " href={props.url}>
 				<div
 					style={`background-image: url("${propsWithDefaults?.image_url}")`}
 					class="h-[75px] w-full md:h-[200px] md:w-[200px] bg-center bg-no-repeat bg-cover"

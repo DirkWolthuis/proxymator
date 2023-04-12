@@ -23,28 +23,6 @@ import ProxyItem, { Proxy } from './ProxyItem';
 // 	}
 // `;
 
-const getProxiesByUnitGameId = gql`
-	query FilterProxiesByUnitGroupId($game_id: Int!) {
-		proxies(
-			order_by: { created_at: desc }
-			where: { proxy_units: { unit: { unit_group: { game_id: { _eq: $game_id } } } } }
-		) {
-			name
-			id
-			url
-			image_url
-			price
-			creator_name
-			proxy_units {
-				unit {
-					name
-					id
-				}
-			}
-		}
-	}
-`;
-
 const getProxiesByUnitGroupId = gql`
 	query GetProxiesByUnitGroupId($unit_group_id: Int!) {
 		proxies(
@@ -86,10 +64,15 @@ const getProxiesByUnitIds = gql`
 	}
 `;
 
-const getProxies = async (): Promise<{ proxies: Proxy[] }> =>
+const getProxies = async (filterOptions?: {
+	game_id?: number;
+	unitIds?: number[];
+	unitGroupId?: number;
+}): Promise<{ proxies: Proxy[] }> =>
 	(
 		await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxies`, {
 			method: 'POST',
+			body: JSON.stringify(filterOptions),
 		})
 	).json();
 
@@ -97,15 +80,23 @@ interface ProxyListProps {}
 
 export default function ProxyList(props: ProxyListProps) {
 	const [{ selectedGameId, selectedUnitGroupId, selectedUnitIds }] = useFilter();
-	const [proxies] = createResource(getProxies);
-	//const [proxies] = graphqlClient<{ proxies: Proxy[] }>(getProxies);
-	const [proxiesByGameId] = graphqlClient<{ proxies: Proxy[] }>(getProxiesByUnitGameId, () =>
-		selectedGameId()
-			? {
-					game_id: selectedGameId(),
-			  }
-			: null,
+	const [proxies] = createResource({}, getProxies);
+	const [proxiesByGameId] = createResource(
+		() =>
+			selectedGameId()
+				? {
+						game_id: selectedGameId(),
+				  }
+				: null,
+		getProxies,
 	);
+	// const [proxiesByGameId] = graphqlClient<{ proxies: Proxy[] }>(getProxiesByUnitGameId, () =>
+	// 	selectedGameId()
+	// 		? {
+	// 				game_id: selectedGameId(),
+	// 		  }
+	// 		: null,
+	// );
 	const [proxiesByUnitGroupId] = graphqlClient<{ proxies: Proxy[] }>(getProxiesByUnitGroupId, () =>
 		selectedUnitGroupId()
 			? {
