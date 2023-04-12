@@ -1,4 +1,3 @@
-import { gql } from '@solid-primitives/graphql';
 import { makeAbortable } from '@solid-primitives/resource';
 import {
 	Accessor,
@@ -16,7 +15,7 @@ import {
 } from 'solid-js';
 import ProxyItem from '~/components/ProxyItem';
 import { Games, UnitGroups, Units, getGames, getUnitGroups, getUnits } from '~/components/Sidebar';
-import { graphqlClient } from '~/shared/GraphQLClient';
+import { ProxyWithUnitsData } from './api/proxy';
 
 interface Step {
 	id: number;
@@ -50,6 +49,24 @@ const steps = [
 		valid: true,
 	},
 ];
+
+export const SaveProxyWithUnits = async (
+	data: ProxyWithUnitsData,
+): Promise<{ insert_proxies: { affected_rows: number } }> =>
+	(
+		await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxy`, {
+			method: 'POST',
+			body: JSON.stringify({ ...data }),
+		})
+	).json();
+
+export const GetProxyByUrl = async (url: string): Promise<{ proxies: { id: number }[] }> =>
+	(
+		await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxy-by-url`, {
+			method: 'POST',
+			body: JSON.stringify({ url }),
+		})
+	).json();
 
 const initSteps = (): Step[] =>
 	steps.map((step) => {
@@ -107,38 +124,6 @@ const validateUrl = (url: string): boolean => {
 			return false;
 	}
 };
-
-const SaveProxyWithProxyUnits = gql`
-	mutation SaveProxyWithProxyUnits(
-		$creator_name: String = ""
-		$image_url: String = ""
-		$name: String = ""
-		$price: money = ""
-		$url: String = ""
-		$data: [proxy_units_insert_input!] = {}
-	) {
-		insert_proxies(
-			objects: {
-				creator_name: $creator_name
-				image_url: $image_url
-				name: $name
-				price: $price
-				url: $url
-				proxy_units: { data: $data }
-			}
-		) {
-			affected_rows
-		}
-	}
-`;
-
-const CheckIfProxyUrlIsUnique = gql`
-	query CheckIfProxyUrlIsUnique($url: String = "") {
-		proxies(where: { url: { _eq: $url } }) {
-			id
-		}
-	}
-`;
 
 const SubmitProxy: Component<{}> = () => {
 	const steps = initSteps();
@@ -226,9 +211,7 @@ const UrlStep: Component<{
 		}
 	});
 
-	const [duplicateProxies] = graphqlClient<{ proxies: any[] }>(CheckIfProxyUrlIsUnique, () =>
-		sanatizedUrl() ? { url: sanatizedUrl() } : null,
-	);
+	const [duplicateProxies] = createResource(sanatizedUrl, GetProxyByUrl);
 
 	return (
 		<>
@@ -288,21 +271,9 @@ const SelectUnitsStep: Component<{
 	const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
 	const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
 
-	const [games] = graphqlClient<Games>(getGames, {});
-	const [unitGroups] = graphqlClient<UnitGroups>(getUnitGroups, () =>
-		selectedGameId()
-			? {
-					game_id: selectedGameId(),
-			  }
-			: null,
-	);
-	const [units] = graphqlClient<Units>(getUnits, () =>
-		selectedUnitGroupId()
-			? {
-					unit_group_id: selectedUnitGroupId(),
-			  }
-			: null,
-	);
+	const [games] = createResource(getGames);
+	const [unitGroups] = createResource(selectedGameId, getUnitGroups);
+	const [units] = createResource(selectedUnitGroupId, getUnits);
 
 	const onToggleUnitId = (id: number) => {
 		if (selectedUnitIds()?.find((suId) => suId === id)) {
@@ -364,16 +335,19 @@ const SaveStep: Component<{
 	}[];
 	urlWithData: UrlData | undefined;
 }> = (props) => {
-	const [result] = graphqlClient(SaveProxyWithProxyUnits, {
-		data: props.selectedUnits.map((unit) => ({ unit_id: unit.id })),
-		creator_name: props.urlWithData?.creatorName,
-		image_url: props.urlWithData?.imgUrl,
-		url: props.urlWithData?.url,
-		price: props.urlWithData?.price,
-		name: props.urlWithData?.name,
-	});
+	const [result] = createResource(
+		() =>
+			({
+				data: props.selectedUnits.map((unit) => ({ unit_id: unit.id })),
+				creator_name: props.urlWithData?.creatorName,
+				image_url: props.urlWithData?.imgUrl,
+				url: props.urlWithData?.url,
+				price: props.urlWithData?.price,
+				name: props.urlWithData?.name!,
+			} as ProxyWithUnitsData),
+		SaveProxyWithUnits,
+	);
 
-	createEffect(() => console.log(result.state));
 	return (
 		<>
 			<ErrorBoundary fallback={<p>error</p>}>

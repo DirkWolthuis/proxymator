@@ -3,14 +3,14 @@ import Chip from '~/shared/components/Chip';
 import { FaSolidChevronDown, FaSolidChevronUp } from 'solid-icons/fa';
 import { useFilter } from '~/context/FilterContext';
 
-const getGames = async (): Promise<{ games: { name: string; id: number }[] }> =>
+export const getGames = async (): Promise<{ games: { name: string; id: number }[] }> =>
 	(
 		await fetch(`${import.meta.env.VITE_BASE_URL}/api/games`, {
 			method: 'GET',
 		})
 	).json();
 
-const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { name: string; id: number }[] }> =>
+export const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { name: string; id: number }[] }> =>
 	(
 		await fetch(`${import.meta.env.VITE_BASE_URL}/api/unit-groups`, {
 			method: 'POST',
@@ -18,7 +18,7 @@ const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { name: str
 		})
 	).json();
 
-const getUnits = async (unitGroupId: number): Promise<{ units: { name: string; id: number }[] }> =>
+export const getUnits = async (unitGroupId: number): Promise<{ units: { name: string; id: number }[] }> =>
 	(
 		await fetch(`${import.meta.env.VITE_BASE_URL}/api/units`, {
 			method: 'POST',
