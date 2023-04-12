@@ -1,8 +1,10 @@
 import { APIEvent, json } from 'solid-start';
 import { ApolloClient, InMemoryCache, gql } from '@apollo/client/core';
 
+const cache = new InMemoryCache();
+
 const client = new ApolloClient({
-	cache: new InMemoryCache(),
+	cache: cache,
 	headers: { 'x-hasura-admin-secret': import.meta.env.VITE_HASURA_KEY },
 	uri: import.meta.env.VITE_HASURA_URL,
 });
@@ -132,6 +134,8 @@ export async function POST({ params, request }: APIEvent) {
 			query: getProxies,
 		})
 		.then((res) => res.data);
+
+	cache.reset();
 
 	return json(res);
 }
