@@ -1,36 +1,30 @@
-import { gql } from '@solid-primitives/graphql';
-import { Component, createEffect, createSignal, ErrorBoundary, For, Setter, Show, Suspense } from 'solid-js';
+import { Component, createResource, createSignal, ErrorBoundary, For, Setter, Show, Suspense } from 'solid-js';
 import Chip from '~/shared/components/Chip';
-import { graphqlClient } from '~/shared/GraphQLClient';
 import { FaSolidChevronDown, FaSolidChevronUp } from 'solid-icons/fa';
 import { useFilter } from '~/context/FilterContext';
 
-export const getGames = gql`
-	query getGames {
-		games {
-			id
-			name
-		}
-	}
-`;
+const getGames = async (): Promise<{ games: { name: string; id: number }[] }> =>
+	(
+		await fetch(`${import.meta.env.VITE_BASE_URL}/api/games`, {
+			method: 'GET',
+		})
+	).json();
 
-export const getUnitGroups = gql`
-	query GetUnitGroups($game_id: Int) {
-		unit_groups(where: { game_id: { _eq: $game_id } }) {
-			name
-			id
-		}
-	}
-`;
+const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { name: string; id: number }[] }> =>
+	(
+		await fetch(`${import.meta.env.VITE_BASE_URL}/api/unit-groups`, {
+			method: 'POST',
+			body: JSON.stringify({ game_id: gameId }),
+		})
+	).json();
 
-export const getUnits = gql`
-	query GetUnits($unit_group_id: Int) {
-		units(where: { unit_group_id: { _eq: $unit_group_id } }) {
-			name
-			id
-		}
-	}
-`;
+const getUnits = async (unitGroupId: number): Promise<{ units: { name: string; id: number }[] }> =>
+	(
+		await fetch(`${import.meta.env.VITE_BASE_URL}/api/units`, {
+			method: 'POST',
+			body: JSON.stringify({ unit_group_id: unitGroupId }),
+		})
+	).json();
 
 export type Games = { games: { name: string; id: number }[] };
 export type UnitGroups = { unit_groups: { name: string; id: number }[] };
@@ -43,21 +37,9 @@ export const Sidebar: Component = () => {
 		{ setSelectedGameId, setSelectedUnitGroupId, setSelectedUnitIds },
 	] = useFilter();
 
-	const [games] = graphqlClient<Games>(getGames, {});
-	const [unitGroups] = graphqlClient<UnitGroups>(getUnitGroups, () =>
-		selectedGameId()
-			? {
-					game_id: selectedGameId(),
-			  }
-			: null,
-	);
-	const [units] = graphqlClient<Units>(getUnits, () =>
-		selectedUnitGroupId()
-			? {
-					unit_group_id: selectedUnitGroupId(),
-			  }
-			: null,
-	);
+	const [games] = createResource(getGames);
+	const [unitGroups] = createResource(selectedGameId, getUnitGroups);
+	const [units] = createResource(selectedUnitGroupId, getUnits);
 
 	const unitGroupsData = () => (selectedGameId() ? unitGroups() : undefined);
 	const unitData = () => (selectedUnitGroupId() ? units() : undefined);
