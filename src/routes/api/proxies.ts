@@ -48,17 +48,81 @@ const getProxiesByUnitGameId = gql`
 	}
 `;
 
-export async function POST({ params, request }: APIEvent) {
-	const body: { gameId: number; unitGroupId: number; unitIds: number[] } = await new Response(request.body).json();
+const getProxiesByUnitGroupId = gql`
+	query GetProxiesByUnitGroupId($unit_group_id: Int!) {
+		proxies(
+			order_by: { created_at: desc }
+			where: { proxy_units: { unit: { unit_group_id: { _eq: $unit_group_id } } } }
+		) {
+			name
+			id
+			url
+			image_url
+			price
+			creator_name
+			proxy_units {
+				unit {
+					name
+					id
+				}
+			}
+		}
+	}
+`;
 
-	if (body?.unitIds?.length > 0) {
+const getProxiesByUnitIds = gql`
+	query GetProxiesByUnitIds($unit_ids: [Int!]) {
+		proxies(where: { proxy_units: { unit_id: { _in: $unit_ids } } }) {
+			id
+			name
+			url
+			image_url
+			price
+			creator_name
+			proxy_units {
+				unit {
+					name
+					id
+				}
+			}
+		}
 	}
-	if (body?.unitGroupId) {
+`;
+
+export async function POST({ params, request }: APIEvent) {
+	const body: { game_id: number; unit_group_id: number; unit_ids: number[] } = await new Response(
+		request.body,
+	).json();
+
+	if (body?.unit_ids?.length > 0) {
+		const res = await client
+			.query({
+				query: getProxiesByUnitIds,
+				variables: {
+					unit_ids: body?.unit_ids,
+				},
+			})
+			.then((res) => res.data);
+		return json(res);
 	}
-	if (body?.gameId) {
+	if (body?.unit_group_id) {
+		const res = await client
+			.query({
+				query: getProxiesByUnitGroupId,
+				variables: {
+					unit_group_id: body?.unit_group_id,
+				},
+			})
+			.then((res) => res.data);
+		return json(res);
+	}
+	if (body?.game_id) {
 		const res = await client
 			.query({
 				query: getProxiesByUnitGameId,
+				variables: {
+					game_id: body?.game_id,
+				},
 			})
 			.then((res) => res.data);
 		return json(res);
