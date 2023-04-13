@@ -11,7 +11,7 @@ const client = new ApolloClient({
 
 const getProxies = gql`
 	query GetProxies {
-		proxies(order_by: { created_at: desc }) {
+		proxies(order_by: { created_at: desc }, limit: 25) {
 			id
 			name
 			url
@@ -33,6 +33,7 @@ const getProxiesByUnitGameId = gql`
 		proxies(
 			order_by: { created_at: desc }
 			where: { proxy_units: { unit: { unit_group: { game_id: { _eq: $game_id } } } } }
+			limit: 25
 		) {
 			name
 			id
@@ -55,6 +56,7 @@ const getProxiesByUnitGroupId = gql`
 		proxies(
 			order_by: { created_at: desc }
 			where: { proxy_units: { unit: { unit_group_id: { _eq: $unit_group_id } } } }
+			limit: 25
 		) {
 			name
 			id
@@ -74,7 +76,7 @@ const getProxiesByUnitGroupId = gql`
 
 const getProxiesByUnitIds = gql`
 	query GetProxiesByUnitIds($unit_ids: [Int!]) {
-		proxies(where: { proxy_units: { unit_id: { _in: $unit_ids } } }) {
+		proxies(where: { proxy_units: { unit_id: { _in: $unit_ids } } }, limit: 25) {
 			id
 			name
 			url
