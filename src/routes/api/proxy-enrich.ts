@@ -10,8 +10,6 @@ const sanatizeText = (text: string) => {
 	return text.replace(regex, '').trim();
 };
 
-export async function GET({}: APIEvent) {}
-
 export async function POST({ params, request }: APIEvent) {
 	const { url } = await new Response(request.body).json();
 
@@ -25,12 +23,4 @@ export async function POST({ params, request }: APIEvent) {
 	const creatorName = $('.designerWordFlex p a').html();
 
 	return json({ name: name && sanatizeText(name), price: price, imgUrl: imgUrl, creatorName, url: url });
-}
-
-export function PATCH() {
-	// ...
-}
-
-export function DELETE() {
-	// ...
 }

@@ -2,6 +2,7 @@ import { Component, createResource, createSignal, ErrorBoundary, For, Setter, Sh
 import Chip from '~/shared/components/Chip';
 import { FaSolidChevronDown, FaSolidChevronUp } from 'solid-icons/fa';
 import { useFilter } from '~/context/FilterContext';
+import Loader from '~/shared/components/Loader';
 
 export const getGames = async (): Promise<{ games: { name: string; id: number }[] }> =>
 	(
@@ -72,9 +73,9 @@ export const Sidebar: Component = () => {
 				</button>
 			</div>
 
-			<Suspense fallback={<p>loading...</p>}>
-				<ErrorBoundary fallback={<p>error</p>}>
-					<div class={`${expanded() ? 'block' : 'hidden'} lg:block`}>
+			<ErrorBoundary fallback={<p>error</p>}>
+				<div class={`${expanded() ? 'block' : 'hidden'} lg:block`}>
+					<Suspense fallback={<Loader />}>
 						<Games setSelectedGameId={setSelectedGameId} games={games()}></Games>
 						<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
 						<Units
@@ -87,9 +88,9 @@ export const Sidebar: Component = () => {
 								Clear filters
 							</button>
 						</div>
-					</div>
-				</ErrorBoundary>
-			</Suspense>
+					</Suspense>
+				</div>
+			</ErrorBoundary>
 		</aside>
 	);
 };

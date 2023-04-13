@@ -16,6 +16,7 @@ import {
 import ProxyItem from '~/components/ProxyItem';
 import { Games, UnitGroups, Units, getGames, getUnitGroups, getUnits } from '~/components/Sidebar';
 import { ProxyWithUnitsData } from './api/proxy';
+import Loader from '~/shared/components/Loader';
 
 interface Step {
 	id: number;
@@ -140,40 +141,34 @@ const SubmitProxy: Component<{}> = () => {
 	};
 
 	return (
-		<div class="container">
-			<div class="section">
-				<Switch>
-					<Match when={activeStep() === 1}>
-						<UrlStep
-							step={steps[0]}
-							validateStep={validateStep}
-							nextStep={onNextStep}
-							saveUrlData={setUrlWithData}
-						/>
-					</Match>
-					<Match when={activeStep() === 2}>
-						<SelectUnitsStep
-							validateStep={validateStep}
-							step={steps[1]}
-							selectedUnits={selectedUnits()}
-							setSelectedUnits={setSelectedUnits}
-						/>
-					</Match>
-					<Match when={activeStep() === 3}>
-						<SaveStep
-							urlWithData={urlWithData()}
-							selectedUnits={selectedUnits()}
-							step={steps[2]}
-						></SaveStep>
-					</Match>
-				</Switch>
-				<Show when={steps[activeStep() - 1]?.valid() && (activeStep() === 1 || activeStep() === 2)}>
-					<button onClick={onNextStep} class="button button-primary">
-						Next
-					</button>
-				</Show>
-			</div>
-		</div>
+		<>
+			<Switch>
+				<Match when={activeStep() === 1}>
+					<UrlStep
+						step={steps[0]}
+						validateStep={validateStep}
+						nextStep={onNextStep}
+						saveUrlData={setUrlWithData}
+					/>
+				</Match>
+				<Match when={activeStep() === 2}>
+					<SelectUnitsStep
+						validateStep={validateStep}
+						step={steps[1]}
+						selectedUnits={selectedUnits()}
+						setSelectedUnits={setSelectedUnits}
+					/>
+				</Match>
+				<Match when={activeStep() === 3}>
+					<SaveStep urlWithData={urlWithData()} selectedUnits={selectedUnits()} step={steps[2]}></SaveStep>
+				</Match>
+			</Switch>
+			<Show when={steps[activeStep() - 1]?.valid() && (activeStep() === 1 || activeStep() === 2)}>
+				<button onClick={onNextStep} class="button button-primary">
+					Next
+				</button>
+			</Show>
+		</>
 	);
 };
 
@@ -208,6 +203,8 @@ const UrlStep: Component<{
 		if (urlWithData() && duplicateProxies()?.proxies.length === 0) {
 			props.validateStep(true, props.step.id);
 			props.saveUrlData(urlWithData()!);
+		} else if (duplicateProxies()?.proxies.length > 0) {
+			props.validateStep(false, props.step.id);
 		}
 	});
 
@@ -230,24 +227,26 @@ const UrlStep: Component<{
 				/>
 			</div>
 			<div class="w-full lg:w-1/2 mt-8">
-				<Suspense>
+				<Suspense fallback={<Loader />}>
 					<Show when={duplicateProxies()?.proxies?.length > 0}>
-						<p>Url already exits</p>
+						<p class="mb-2">Url already exits</p>
 					</Show>
-					<Show when={duplicateProxies()?.proxies?.length === 0 && urlWithData()}>
-						<label class="font-bold block" htmlFor="">
-							Page preview
-						</label>
-						<div class="mt-4">
-							<ProxyItem
-								creator_name={urlWithData()?.creatorName!}
-								name={urlWithData()?.name!}
-								image_url={urlWithData()?.imgUrl!}
-								price={urlWithData()?.price!}
-								url={'asd'}
-							></ProxyItem>
-						</div>
-					</Show>
+					<Suspense fallback={<Loader />}>
+						<Show when={duplicateProxies()?.proxies?.length === 0 && urlWithData()}>
+							<label class="font-bold block" htmlFor="">
+								Page preview
+							</label>
+							<div class="mt-4">
+								<ProxyItem
+									creator_name={urlWithData()?.creatorName!}
+									name={urlWithData()?.name!}
+									image_url={urlWithData()?.imgUrl!}
+									price={urlWithData()?.price!}
+									url={''}
+								></ProxyItem>
+							</div>
+						</Show>
+					</Suspense>
 				</Suspense>
 			</div>
 		</>
@@ -298,7 +297,7 @@ const SelectUnitsStep: Component<{
 			<div class="w-full lg:w-1/2">
 				<h2 class="text-2xl font-bold">{props.step.title}</h2>
 				<div class="mt-4">
-					<Suspense>
+					<Suspense fallback={<Loader />}>
 						<Games setSelectedGameId={setSelectedGameId} games={games()}></Games>
 						<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
 						<div class="max-h-[400px] overflow-y-scroll">
@@ -349,18 +348,16 @@ const SaveStep: Component<{
 	);
 
 	return (
-		<>
-			<ErrorBoundary fallback={<p>error</p>}>
-				<Show when={result.state === 'errored'}>
-					<h2>Error</h2>
-				</Show>
+		<ErrorBoundary fallback={<p>error</p>}>
+			<Show when={result.state === 'errored'}>
+				<h2>Error</h2>
+			</Show>
 
-				<Suspense fallback={<p>Loading</p>}>
-					<Show when={result.state === 'ready'}>
-						<p>Saved!</p>
-					</Show>
-				</Suspense>
-			</ErrorBoundary>
-		</>
+			<Suspense fallback={<Loader />}>
+				<Show when={result.state === 'ready'}>
+					<p>Saved!</p>
+				</Show>
+			</Suspense>
+		</ErrorBoundary>
 	);
 };

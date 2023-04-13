@@ -1,6 +1,7 @@
 import { createResource, ErrorBoundary, For, Match, Suspense, Switch } from 'solid-js';
 import { useFilter } from '~/context/FilterContext';
 import ProxyItem, { Proxy } from './ProxyItem';
+import Loader from '~/shared/components/Loader';
 
 const getProxies = async (filterOptions?: {
 	game_id?: number;
@@ -50,7 +51,7 @@ export default function ProxyList(props: ProxyListProps) {
 	);
 
 	return (
-		<Suspense>
+		<Suspense fallback={<Loader />}>
 			<ErrorBoundary fallback={<p>stuk</p>}>
 				<Switch fallback={<p>fallback</p>}>
 					<Match when={selectedUnitIds().length > 0}>

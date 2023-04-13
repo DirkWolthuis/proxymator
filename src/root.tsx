@@ -3,6 +3,7 @@ import { Show, Suspense, createResource, createSignal } from 'solid-js';
 import { Body, ErrorBoundary, FileRoutes, Head, Html, Meta, Routes, Scripts, Title } from 'solid-start';
 import './root.css';
 import Header from './components/Header';
+import Loader from './shared/components/Loader';
 
 const checkPassword = async (password: string): Promise<{ valid: boolean }> =>
 	(
@@ -29,12 +30,13 @@ export default function Root() {
 				<Meta name="viewport" content="width=device-width, initial-scale=1" />
 			</Head>
 			<Body class="bg-slate-900 text-slate-50">
-				<Suspense>
-					<ErrorBoundary>
-						<Header></Header>
-						<Show when={!auth()}>
-							<div class="container">
-								<div class="section">
+				<ErrorBoundary>
+					<Header />
+
+					<div class="container">
+						<div class="section">
+							<Suspense fallback={<Loader />}>
+								<Show when={!auth()}>
 									<div class="w-full md:w-1/2 lg:w-1/3">
 										<label htmlFor="password">Password</label>
 										<input
@@ -49,16 +51,16 @@ export default function Root() {
 											Login
 										</button>
 									</div>
-								</div>
-							</div>
-						</Show>
-						<Show when={auth()}>
-							<Routes>
-								<FileRoutes />
-							</Routes>
-						</Show>
-					</ErrorBoundary>
-				</Suspense>
+								</Show>
+								<Show when={auth()}>
+									<Routes>
+										<FileRoutes />
+									</Routes>
+								</Show>
+							</Suspense>
+						</div>
+					</div>
+				</ErrorBoundary>
 				<Scripts />
 			</Body>
 		</Html>
