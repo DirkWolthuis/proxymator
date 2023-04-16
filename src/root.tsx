@@ -30,13 +30,12 @@ export default function Root() {
 				<Meta charset="utf-8" />
 				<Meta name="viewport" content="width=device-width, initial-scale=1" />
 			</Head>
-			<Body class="bg-slate-900 text-slate-50 flex flex-col min-h-screen">
+			<Body class="bg-slate-900 text-slate-50 ">
 				<ErrorBoundary>
-					<Header />
-					<div class="container flex-grow">
-						<div class="section">
-							<Suspense fallback={<Loader />}>
-								<Show when={!auth()}>
+					<Suspense fallback={<Loader />}>
+						<Show when={!auth() || !auth()?.valid}>
+							<div class="container">
+								<div class="section">
 									<div class="w-full md:w-1/2 lg:w-1/3">
 										<label htmlFor="password">Password</label>
 										<input
@@ -51,16 +50,23 @@ export default function Root() {
 											Login
 										</button>
 									</div>
-								</Show>
-								<Show when={auth()}>
-									<Routes>
-										<FileRoutes />
-									</Routes>
-								</Show>
-							</Suspense>
-						</div>
-					</div>
-					<Footer />
+								</div>
+							</div>
+						</Show>
+						<Show when={auth()?.valid}>
+							<div class="flex flex-col min-h-screen">
+								<Header />
+								<div class="container flex-grow">
+									<div class="section">
+										<Routes>
+											<FileRoutes />
+										</Routes>
+									</div>
+								</div>
+								<Footer />
+							</div>
+						</Show>
+					</Suspense>
 				</ErrorBoundary>
 				<Scripts />
 			</Body>
