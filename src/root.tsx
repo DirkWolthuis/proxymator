@@ -4,6 +4,7 @@ import { Body, ErrorBoundary, FileRoutes, Head, Html, Meta, Routes, Scripts, Tit
 import './root.css';
 import Header from './components/Header';
 import Loader from './shared/components/Loader';
+import Footer from './components/Footer';
 
 const checkPassword = async (password: string): Promise<{ valid: boolean }> =>
 	(
@@ -29,11 +30,10 @@ export default function Root() {
 				<Meta charset="utf-8" />
 				<Meta name="viewport" content="width=device-width, initial-scale=1" />
 			</Head>
-			<Body class="bg-slate-900 text-slate-50">
+			<Body class="bg-slate-900 text-slate-50 flex flex-col min-h-screen">
 				<ErrorBoundary>
 					<Header />
-
-					<div class="container">
+					<div class="container flex-grow">
 						<div class="section">
 							<Suspense fallback={<Loader />}>
 								<Show when={!auth()}>
@@ -60,6 +60,7 @@ export default function Root() {
 							</Suspense>
 						</div>
 					</div>
+					<Footer />
 				</ErrorBoundary>
 				<Scripts />
 			</Body>
