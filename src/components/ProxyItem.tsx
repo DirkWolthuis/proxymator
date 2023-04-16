@@ -1,4 +1,5 @@
 import { Component, For, Show, mergeProps } from 'solid-js';
+import Tag from '~/shared/components/Tag';
 
 export interface Proxy {
 	id?: number;
@@ -14,6 +15,12 @@ interface ProxyUnit {
 	unit: {
 		name: string;
 		id: number;
+		unit_group: {
+			name: string;
+			game: {
+				name: string;
+			};
+		};
 	};
 }
 
@@ -52,9 +59,10 @@ const ProxyItem: Component<Proxy> = (props) => {
 				<div class="mt-6">
 					<For each={propsWithDefaults.proxy_units}>
 						{(proxyUnit) => (
-							<span class="bg-slate-500 inline-flex items-center mr-2 h-8 px-3 text-xs mb-2 rounded gap-2">
-								{proxyUnit.unit.name}
-							</span>
+							<Tag
+								title={proxyUnit.unit.name}
+								tooltipContent={`${proxyUnit.unit.unit_group.game.name} / ${proxyUnit.unit.unit_group.name}`}
+							></Tag>
 						)}
 					</For>
 				</div>
