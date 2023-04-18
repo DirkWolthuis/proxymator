@@ -1,13 +1,6 @@
 import { APIEvent, json } from 'solid-start';
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client/core';
-
-const cache = new InMemoryCache();
-
-const client = new ApolloClient({
-	cache: cache,
-	headers: { 'x-hasura-admin-secret': import.meta.env.VITE_HASURA_KEY },
-	uri: import.meta.env.VITE_HASURA_URL,
-});
+import { gql } from '@apollo/client/core';
+import { client } from '~/shared/services/ApolloService';
 
 export interface ProxyWithUnitsData {
 	data: { unit_id: number }[];
@@ -16,17 +9,22 @@ export interface ProxyWithUnitsData {
 	url: string;
 	price: string;
 	name: string;
+	proxy_id: number;
 }
 
 const SaveProxyWithProxyUnits = gql`
-	mutation SaveProxyWithProxyUnits(
+	mutation DeleteProxyUnitsAndAddProxyWithUnits(
 		$creator_name: String = ""
 		$image_url: String = ""
 		$name: String = ""
 		$price: money = ""
 		$url: String = ""
 		$data: [proxy_units_insert_input!] = {}
+		$proxy_id: Int!
 	) {
+		delete_proxy_units(where: { proxy_id: { _eq: $proxy_id } }) {
+			affected_rows
+		}
 		insert_proxies(
 			objects: {
 				creator_name: $creator_name
@@ -36,6 +34,7 @@ const SaveProxyWithProxyUnits = gql`
 				url: $url
 				proxy_units: { data: $data }
 			}
+			on_conflict: { constraint: proxies_url_key, update_columns: url }
 		) {
 			affected_rows
 		}

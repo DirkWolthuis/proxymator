@@ -9,7 +9,7 @@ const getProxies = async (filterOptions?: {
 	unit_group_id?: number;
 }): Promise<{ proxies: Proxy[] }> =>
 	(
-		await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxies`, {
+		await fetch(`/api/proxies`, {
 			method: 'POST',
 			body: JSON.stringify(filterOptions),
 		})

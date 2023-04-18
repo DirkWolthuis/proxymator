@@ -6,14 +6,14 @@ import Loader from '~/shared/components/Loader';
 
 export const getGames = async (): Promise<{ games: { name: string; id: number }[] }> =>
 	(
-		await fetch(`${import.meta.env.VITE_BASE_URL}/api/games`, {
+		await fetch(`/api/games`, {
 			method: 'GET',
 		})
 	).json();
 
 export const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { name: string; id: number }[] }> =>
 	(
-		await fetch(`${import.meta.env.VITE_BASE_URL}/api/unit-groups`, {
+		await fetch(`/api/unit-groups`, {
 			method: 'POST',
 			body: JSON.stringify({ game_id: gameId }),
 		})
@@ -21,7 +21,7 @@ export const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { na
 
 export const getUnits = async (unitGroupId: number): Promise<{ units: { name: string; id: number }[] }> =>
 	(
-		await fetch(`${import.meta.env.VITE_BASE_URL}/api/units`, {
+		await fetch(`/api/units`, {
 			method: 'POST',
 			body: JSON.stringify({ unit_group_id: unitGroupId }),
 		})

@@ -1,28 +1,6 @@
 import { Component, For, Show, mergeProps } from 'solid-js';
 import Tag from '~/shared/components/Tag';
-
-export interface Proxy {
-	id?: number;
-	name: string;
-	url?: string;
-	image_url: string;
-	price: string;
-	creator_name: string;
-	proxy_units?: ProxyUnit[];
-}
-
-interface ProxyUnit {
-	unit: {
-		name: string;
-		id: number;
-		unit_group: {
-			name: string;
-			game: {
-				name: string;
-			};
-		};
-	};
-}
+import { Proxy } from '../types';
 
 const ProxyItem: Component<Proxy> = (props) => {
 	const propsWithDefaults = mergeProps({ proxy_units: [] }, props);

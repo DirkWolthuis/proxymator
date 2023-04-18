@@ -17,6 +17,7 @@ import ProxyItem from '~/components/ProxyItem';
 import { Games, UnitGroups, Units, getGames, getUnitGroups, getUnits } from '~/components/Sidebar';
 import { ProxyWithUnitsData } from './api/proxy';
 import Loader from '~/shared/components/Loader';
+import { Proxy, Unit } from '~/types';
 
 interface Step {
 	id: number;
@@ -55,15 +56,15 @@ export const SaveProxyWithUnits = async (
 	data: ProxyWithUnitsData,
 ): Promise<{ insert_proxies: { affected_rows: number } }> =>
 	(
-		await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxy`, {
+		await fetch(`/api/proxy`, {
 			method: 'POST',
 			body: JSON.stringify({ ...data }),
 		})
 	).json();
 
-export const GetProxyByUrl = async (url: string): Promise<{ proxies: { id: number }[] }> =>
+export const GetProxyByUrl = async (url: string): Promise<{ proxies: Proxy[] }> =>
 	(
-		await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxy-by-url`, {
+		await fetch(`/api/proxy-by-url`, {
 			method: 'POST',
 			body: JSON.stringify({ url }),
 		})
@@ -130,7 +131,9 @@ const SubmitProxy: Component<{}> = () => {
 	const steps = initSteps();
 	const [activeStep, setActiveStep] = createSignal(1);
 	const [urlWithData, setUrlWithData] = createSignal<UrlData>();
-	const [selectedUnits, setSelectedUnits] = createSignal<{ name: string; id: number }[]>([]);
+	const [existingProxyId, setExistingProxyId] = createSignal<number>();
+
+	const [selectedUnits, setSelectedUnits] = createSignal<Unit[]>([]);
 
 	const onNextStep = () => {
 		setActiveStep(activeStep() + 1);
@@ -149,6 +152,8 @@ const SubmitProxy: Component<{}> = () => {
 						validateStep={validateStep}
 						nextStep={onNextStep}
 						saveUrlData={setUrlWithData}
+						setSelectedUnits={setSelectedUnits}
+						setExistingProxyId={setExistingProxyId}
 					/>
 				</Match>
 				<Match when={activeStep() === 2}>
@@ -160,7 +165,12 @@ const SubmitProxy: Component<{}> = () => {
 					/>
 				</Match>
 				<Match when={activeStep() === 3}>
-					<SaveStep urlWithData={urlWithData()} selectedUnits={selectedUnits()} step={steps[2]}></SaveStep>
+					<SaveStep
+						existingProxyId={existingProxyId()}
+						urlWithData={urlWithData()}
+						selectedUnits={selectedUnits()}
+						step={steps[2]}
+					></SaveStep>
 				</Match>
 			</Switch>
 			<Show when={steps[activeStep() - 1]?.valid() && (activeStep() === 1 || activeStep() === 2)}>
@@ -178,37 +188,43 @@ const UrlStep: Component<{
 	step: Step;
 	validateStep: (valid: boolean, stepId: number) => void;
 	nextStep: () => void;
-	saveUrlData: Setter<{
-		name: string;
-		price: string;
-		imgUrl: string;
-		creatorName: string;
-		url: string;
-	}>;
+	saveUrlData: Setter<UrlData>;
+	setSelectedUnits: Setter<Unit[]>;
+	setExistingProxyId: Setter<number | undefined>;
 }> = (props) => {
 	const [signal, abort] = makeAbortable({ timeout: 10000 });
 	const enrichProxy = async (url: string): Promise<UrlData> =>
 		(
-			await fetch(`${import.meta.env.VITE_BASE_URL}/api/proxy-enrich`, {
+			await fetch(`/api/proxy-enrich`, {
 				method: 'POST',
 				signal: signal(),
 				body: JSON.stringify({ url: url }),
 			})
 		).json();
 	const [url, setUrl] = createSignal<string>();
-	const sanatizedUrl = () => (url() && validateUrl(url()!) ? url() : null);
-	const [urlWithData] = createResource(sanatizedUrl, enrichProxy);
+	const validatedUrl = () => (url() && validateUrl(url()!) ? url() : null);
+	const [urlWithData] = createResource(validatedUrl, enrichProxy);
+	const [proxy] = createResource(validatedUrl, GetProxyByUrl);
 
 	createEffect(() => {
-		if (urlWithData() && duplicateProxies()?.proxies.length === 0) {
+		if (urlWithData()) {
 			props.validateStep(true, props.step.id);
 			props.saveUrlData(urlWithData()!);
-		} else if (duplicateProxies()?.proxies.length > 0) {
+		} else {
 			props.validateStep(false, props.step.id);
 		}
 	});
 
-	const [duplicateProxies] = createResource(sanatizedUrl, GetProxyByUrl);
+	createEffect(() => {
+		const selectedUnits = proxy()?.proxies[0].proxy_units?.map((proxyUnit) => ({
+			name: proxyUnit.unit.name,
+			id: proxyUnit.unit.id,
+		}));
+		if (selectedUnits?.length > 0) {
+			props.setExistingProxyId(proxy()?.proxies[0].id);
+			props.setSelectedUnits(selectedUnits);
+		}
+	});
 
 	return (
 		<>
@@ -228,11 +244,8 @@ const UrlStep: Component<{
 			</div>
 			<div class="w-full lg:w-1/2 mt-8">
 				<Suspense fallback={<Loader />}>
-					<Show when={duplicateProxies()?.proxies?.length > 0}>
-						<p class="mb-2">Url already exits</p>
-					</Show>
 					<Suspense fallback={<Loader />}>
-						<Show when={duplicateProxies()?.proxies?.length === 0 && urlWithData()}>
+						<Show when={urlWithData()}>
 							<label class="font-bold block" htmlFor="">
 								Page preview
 							</label>
@@ -243,6 +256,7 @@ const UrlStep: Component<{
 									image_url={urlWithData()?.imgUrl!}
 									price={urlWithData()?.price!}
 									url={''}
+									proxy_units={proxy()?.proxies[0].proxy_units}
 								></ProxyItem>
 							</div>
 						</Show>
@@ -333,6 +347,7 @@ const SaveStep: Component<{
 		id: number;
 	}[];
 	urlWithData: UrlData | undefined;
+	existingProxyId: number | undefined;
 }> = (props) => {
 	const [result] = createResource(
 		() =>
@@ -343,6 +358,7 @@ const SaveStep: Component<{
 				url: props.urlWithData?.url,
 				price: props.urlWithData?.price,
 				name: props.urlWithData?.name!,
+				proxy_id: props.existingProxyId,
 			} as ProxyWithUnitsData),
 		SaveProxyWithUnits,
 	);

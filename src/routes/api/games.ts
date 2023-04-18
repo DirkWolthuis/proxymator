@@ -1,13 +1,6 @@
 import { APIEvent, json } from 'solid-start';
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client/core';
-
-const cache = new InMemoryCache();
-
-const client = new ApolloClient({
-	cache: cache,
-	headers: { 'x-hasura-admin-secret': import.meta.env.VITE_HASURA_KEY },
-	uri: import.meta.env.VITE_HASURA_URL,
-});
+import { gql } from '@apollo/client/core';
+import { client } from '~/shared/services/ApolloService';
 
 export const getGames = gql`
 	query getGames {
