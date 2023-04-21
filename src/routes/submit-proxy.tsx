@@ -216,7 +216,7 @@ const UrlStep: Component<{
 	});
 
 	createEffect(() => {
-		const selectedUnits = proxy()?.proxies[0].proxy_units?.map((proxyUnit) => ({
+		const selectedUnits = proxy()?.proxies?.[0]?.proxy_units?.map((proxyUnit) => ({
 			name: proxyUnit.unit.name,
 			id: proxyUnit.unit.id,
 		}));
