@@ -256,7 +256,7 @@ const UrlStep: Component<{
 									image_url={urlWithData()?.imgUrl!}
 									price={urlWithData()?.price!}
 									url={''}
-									proxy_units={proxy()?.proxies[0].proxy_units}
+									proxy_units={proxy()?.proxies?.[0]?.proxy_units}
 								></ProxyItem>
 							</div>
 						</Show>
