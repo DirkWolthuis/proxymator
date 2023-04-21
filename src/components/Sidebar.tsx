@@ -3,15 +3,16 @@ import Chip from '~/shared/components/Chip';
 import { FaSolidChevronDown, FaSolidChevronUp } from 'solid-icons/fa';
 import { useFilter } from '~/context/FilterContext';
 import Loader from '~/shared/components/Loader';
+import { Game, Unit, UnitGroup } from '~/types';
 
-export const getGames = async (): Promise<{ games: { name: string; id: number }[] }> =>
+export const getGames = async (): Promise<{ games: Game[] }> =>
 	(
 		await fetch(`/api/games`, {
 			method: 'GET',
 		})
 	).json();
 
-export const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { name: string; id: number }[] }> =>
+export const getUnitGroups = async (gameId: number): Promise<{ unit_groups: UnitGroup[] }> =>
 	(
 		await fetch(`/api/unit-groups`, {
 			method: 'POST',
@@ -19,17 +20,17 @@ export const getUnitGroups = async (gameId: number): Promise<{ unit_groups: { na
 		})
 	).json();
 
-export const getUnits = async (unitGroupId: number): Promise<{ units: { name: string; id: number }[] }> =>
+interface GetUnits extends Unit {
+	unit_groups: UnitGroup;
+}
+
+export const getUnits = async (unitGroupId: number): Promise<{ units: GetUnits[] }> =>
 	(
 		await fetch(`/api/units`, {
 			method: 'POST',
 			body: JSON.stringify({ unit_group_id: unitGroupId }),
 		})
 	).json();
-
-export type Games = { games: { name: string; id: number }[] };
-export type UnitGroups = { unit_groups: { name: string; id: number }[] };
-export type Units = { units: { name: string; id: number }[] };
 
 export const Sidebar: Component = () => {
 	const [expanded, setExpanded] = createSignal<boolean>(false);
@@ -76,11 +77,14 @@ export const Sidebar: Component = () => {
 			<ErrorBoundary fallback={<p>error</p>}>
 				<div class={`${expanded() ? 'block' : 'hidden'} lg:block`}>
 					<Suspense fallback={<Loader />}>
-						<Games setSelectedGameId={setSelectedGameId} games={games()}></Games>
-						<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
+						<Games setSelectedGameId={setSelectedGameId} games={games()?.games}></Games>
+						<UnitGroups
+							setSelectedUnitGroupId={setSelectedUnitGroupId}
+							unitGroups={unitGroupsData()?.unit_groups}
+						/>
 						<Units
 							setSelectedUnitIds={onToggleUnitId}
-							units={unitData()}
+							units={unitData()?.units}
 							selectedUnitIds={selectedUnitIds()}
 						/>
 						<div class="mb-4">
@@ -95,7 +99,7 @@ export const Sidebar: Component = () => {
 	);
 };
 interface GameProps {
-	games: Games | undefined;
+	games: Game[] | undefined;
 	setSelectedGameId: Setter<number | undefined>;
 }
 export const Games: Component<GameProps> = (props) => {
@@ -111,14 +115,14 @@ export const Games: Component<GameProps> = (props) => {
 				id="select-game"
 			>
 				<option value=""></option>
-				<For each={props.games?.games}>{(game) => <option value={game.id}>{game.name}</option>}</For>
+				<For each={props.games}>{(game) => <option value={game.id}>{game.name}</option>}</For>
 			</select>
 		</div>
 	);
 };
 
 interface UnitGroupsProps {
-	unitGroups: UnitGroups | undefined;
+	unitGroups: UnitGroup[] | undefined;
 	setSelectedUnitGroupId: Setter<number | undefined>;
 }
 
@@ -139,7 +143,7 @@ export const UnitGroups: Component<UnitGroupsProps> = (props) => {
 					id="unit-groups"
 				>
 					<option value="">No filter</option>
-					<For each={props.unitGroups?.unit_groups}>
+					<For each={props.unitGroups}>
 						{(unitGroup) => <option value={unitGroup.id}>{unitGroup.name}</option>}
 					</For>
 				</select>
@@ -149,7 +153,7 @@ export const UnitGroups: Component<UnitGroupsProps> = (props) => {
 };
 
 interface UnitsProps {
-	units: Units | undefined;
+	units: Unit[] | undefined;
 	selectedUnitIds: number[];
 	setSelectedUnitIds: (id: any) => void;
 }
@@ -164,7 +168,7 @@ export const Units: Component<UnitsProps> = (props) => {
 				<p class="text-slate-400">First select a faction</p>
 			</Show>
 			<Show when={props.units}>
-				<For each={props.units?.units}>
+				<For each={props.units}>
 					{(unit) => (
 						<Chip
 							value={unit.id}

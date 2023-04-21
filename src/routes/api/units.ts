@@ -7,6 +7,12 @@ export const getUnits = gql`
 		units(where: { unit_group_id: { _eq: $unit_group_id } }) {
 			name
 			id
+			unit_group {
+				name
+				game {
+					name
+				}
+			}
 		}
 	}
 `;

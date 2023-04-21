@@ -21,13 +21,16 @@ export interface ProxyUnit {
 export interface Unit {
 	name: string;
 	id: number;
+	unit_group?: UnitGroup;
 }
 
 export interface UnitGroup {
+	id: string;
 	name: string;
-	game: Game;
+	game?: Game;
 }
 
 export interface Game {
+	id: string;
 	name: string;
 }

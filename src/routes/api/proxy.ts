@@ -12,7 +12,7 @@ export interface ProxyWithUnitsData {
 	proxy_id: number;
 }
 
-const SaveProxyWithProxyUnits = gql`
+const DeleteProxyUnitsAndAddProxyWithUnits = gql`
 	mutation DeleteProxyUnitsAndAddProxyWithUnits(
 		$creator_name: String = ""
 		$image_url: String = ""
@@ -41,15 +41,48 @@ const SaveProxyWithProxyUnits = gql`
 	}
 `;
 
+const SaveProxyWithProxyUnits = gql`
+	mutation SaveProxyWithProxyUnits(
+		$creator_name: String = ""
+		$image_url: String = ""
+		$name: String = ""
+		$price: money = ""
+		$url: String = ""
+		$data: [proxy_units_insert_input!] = {}
+	) {
+		insert_proxies(
+			objects: {
+				creator_name: $creator_name
+				image_url: $image_url
+				name: $name
+				price: $price
+				url: $url
+				proxy_units: { data: $data }
+			}
+		) {
+			affected_rows
+		}
+	}
+`;
+
 export async function POST({ params, request }: APIEvent) {
 	const body: ProxyWithUnitsData = await new Response(request.body).json();
 
-	const res = await client
-		.mutate({
-			mutation: SaveProxyWithProxyUnits,
-			variables: { ...body },
-		})
-		.then((res) => res.data);
-
-	return json(res);
+	if (body.proxy_id) {
+		const res = await client
+			.mutate({
+				mutation: DeleteProxyUnitsAndAddProxyWithUnits,
+				variables: { ...body },
+			})
+			.then((res) => res.data);
+		return json(res);
+	} else {
+		const res = await client
+			.mutate({
+				mutation: SaveProxyWithProxyUnits,
+				variables: { ...body },
+			})
+			.then((res) => res.data);
+		return json(res);
+	}
 }

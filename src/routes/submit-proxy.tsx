@@ -18,6 +18,7 @@ import { Games, UnitGroups, Units, getGames, getUnitGroups, getUnits } from '~/c
 import { ProxyWithUnitsData } from './api/proxy';
 import Loader from '~/shared/components/Loader';
 import { Proxy, Unit } from '~/types';
+import Tag from '~/shared/components/Tag';
 
 interface Step {
 	id: number;
@@ -270,16 +271,8 @@ const UrlStep: Component<{
 const SelectUnitsStep: Component<{
 	step: Step;
 	validateStep: (valid: boolean, stepId: number) => void;
-	setSelectedUnits: Setter<
-		{
-			name: string;
-			id: number;
-		}[]
-	>;
-	selectedUnits: {
-		name: string;
-		id: number;
-	}[];
+	setSelectedUnits: Setter<Unit[]>;
+	selectedUnits: Unit[];
 }> = (props) => {
 	const [selectedGameId, setSelectedGameId] = createSignal<number | undefined>(undefined);
 	const [selectedUnitGroupId, setSelectedUnitGroupId] = createSignal<number | undefined>(undefined);
@@ -306,18 +299,25 @@ const SelectUnitsStep: Component<{
 			props.validateStep(false, props.step.id);
 		}
 	});
+
+	const onDeselectUnit = (id: number) => {
+		props.setSelectedUnits([...props.selectedUnits?.filter((unit) => unit.id !== id)]);
+	};
 	return (
 		<div class="flex flex-wrap lg:flex-nowrap lg:space-x-8">
 			<div class="w-full lg:w-1/2">
 				<h2 class="text-2xl font-bold">{props.step.title}</h2>
 				<div class="mt-4">
 					<Suspense fallback={<Loader />}>
-						<Games setSelectedGameId={setSelectedGameId} games={games()}></Games>
-						<UnitGroups setSelectedUnitGroupId={setSelectedUnitGroupId} unitGroups={unitGroupsData()} />
+						<Games setSelectedGameId={setSelectedGameId} games={games()?.games}></Games>
+						<UnitGroups
+							setSelectedUnitGroupId={setSelectedUnitGroupId}
+							unitGroups={unitGroupsData()?.unit_groups}
+						/>
 						<div class="max-h-[400px] overflow-y-scroll">
 							<Units
 								setSelectedUnitIds={onToggleUnitId}
-								units={unitData()}
+								units={unitData()?.units}
 								selectedUnitIds={selectedUnitIds()}
 							/>
 						</div>
@@ -329,9 +329,13 @@ const SelectUnitsStep: Component<{
 				<div class="mt-4">
 					<For each={props.selectedUnits}>
 						{(unit) => (
-							<span class="bg-slate-500 inline-flex items-center mr-2 h-8 px-3 text-xs mb-2 rounded gap-2">
-								{unit.name}
-							</span>
+							<Tag
+								tooltipContent={`${unit?.unit_group?.game?.name} / ${unit.unit_group?.name}`}
+								value={unit.id}
+								onClose={(id) => onDeselectUnit(id)}
+								closable={true}
+								title={unit.name}
+							></Tag>
 						)}
 					</For>
 				</div>

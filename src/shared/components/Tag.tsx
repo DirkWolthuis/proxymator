@@ -1,13 +1,19 @@
 import { Component, Show, createSignal } from 'solid-js';
-
-const Tag: Component<{ title: string; tooltipContent?: string }> = (props) => {
+import { FaSolidXmark } from 'solid-icons/fa';
+const Tag: Component<{
+	title: string;
+	value?: any;
+	tooltipContent?: string;
+	closable?: boolean;
+	onClose?: (value: any) => any;
+}> = (props) => {
 	const [showTooltip, setShowTooltip] = createSignal(false);
 
 	return (
 		<div
 			onMouseOver={() => setShowTooltip(true)}
 			onMouseOut={() => setShowTooltip(false)}
-			class="inline-block relative mr-2"
+			class="relative mr-2 gap-2 bg-slate-500 items-center h-8 px-3 text-xs mb-2 rounded inline-flex"
 		>
 			<Show when={props.tooltipContent}>
 				<div
@@ -20,8 +26,12 @@ const Tag: Component<{ title: string; tooltipContent?: string }> = (props) => {
 					</span>
 				</div>
 			</Show>
-
-			<span class="bg-slate-500 inline-flex items-center h-8 px-3 text-xs mb-2 rounded">{props.title}</span>
+			<span>{props.title}</span>
+			{props.closable && (
+				<button onClick={() => props.onClose?.(props.value)}>
+					<FaSolidXmark />
+				</button>
+			)}
 		</div>
 	);
 };
