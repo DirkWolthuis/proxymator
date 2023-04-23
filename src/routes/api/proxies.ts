@@ -4,7 +4,10 @@ import { cache, client } from '~/shared/services/ApolloService';
 
 const getProxies = gql`
 	query GetProxies {
-		proxies {
+		proxies(
+			order_by: { created_at: desc }
+			limit: 25
+		) {
 			id
 			name
 			url
