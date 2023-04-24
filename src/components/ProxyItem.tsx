@@ -38,8 +38,8 @@ const ProxyItem: Component<Proxy> = (props) => {
 					<For each={propsWithDefaults.proxy_units}>
 						{(proxyUnit) => (
 							<Tag
-								title={proxyUnit.unit.name}
-								tooltipContent={`${proxyUnit?.unit?.unit_group?.game?.name} / ${proxyUnit.unit.unit_group.name}`}
+								title={proxyUnit.unit?.name}
+								tooltipContent={`${proxyUnit?.unit?.unit_group?.game?.name} / ${proxyUnit.unit?.unit_group?.name}`}
 							></Tag>
 						)}
 					</For>

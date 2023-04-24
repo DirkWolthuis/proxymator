@@ -4,10 +4,7 @@ import { cache, client } from '~/shared/services/ApolloService';
 
 const getProxies = gql`
 	query GetProxies {
-		proxies(
-			order_by: { created_at: desc }
-			limit: 25
-		) {
+		proxies(order_by: { created_at: desc }, limit: 25) {
 			id
 			name
 			url
@@ -101,6 +98,12 @@ const getProxiesByUnitIds = gql`
 				unit {
 					name
 					id
+					unit_group {
+						name
+						game {
+							name
+						}
+					}
 				}
 			}
 		}
